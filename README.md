@@ -1,28 +1,30 @@
 # Adornable
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/adornable`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Adornable provides method decorators in Ruby... 'nuff said.
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add the gem to your application's `Gemfile`:
 
 ```ruby
 gem 'adornable'
 ```
 
-And then execute:
+...and then run:
 
-    $ bundle
+```bash
+bundle
+```
 
-Or install it yourself as:
+Alternatively, install it globally:
 
-    $ gem install adornable
+```bash
+gem install adornable
+```
 
 ## Usage
 
-TODO: Write usage instructions here
+
 
 ## Development
 
