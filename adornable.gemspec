@@ -12,6 +12,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "Method decorators for Ruby"
   spec.description   = "Method decorators for Ruby"
   spec.homepage      = "https://github.com/kjleitz/adornable"
+  spec.license       = "MIT"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.
