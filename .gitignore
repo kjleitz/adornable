@@ -1,81 +1,70 @@
-/.bundle/
-/.yardoc
-/_yardoc/
-/coverage/
-/doc/
+# generic stuff
+.env
+*.gem
+*.rbc
+log/*.log
+/.config
+/InstalledFiles
 /pkg/
-/spec/reports/
 /tmp/
 
-# rspec failure tracking
+# testy stuff
+.rspec
 .rspec_status
+*.orig
+/coverage/
+/coverage/
+/db/*.sqlite3
+/db/*.sqlite3-[0-9]*
+/db/*.sqlite3-journal
+/public/system
+/spec/examples.txt
+/spec/reports/
+/spec/tmp
+/test/tmp/
+/test/version_tmp/
+capybara-*.html
+pickle-email-*.html
+rerun.txt
+test/dummy/db/*.sqlite3
+test/dummy/db/*.sqlite3-journal
+test/dummy/log/*.log
+test/dummy/node_modules/
+test/dummy/storage/
+test/dummy/tmp/
+test/dummy/yarn-error.log
 
-# # generic stuff
-# .env
-# *.gem
-# *.rbc
-# log/*.log
-# /.config
-# /InstalledFiles
-# /pkg/
-# /tmp/
+# debuggy stuff
+.byebug_history
 
-# # testy stuff
-# .rspec
-# *.orig
-# /coverage/
-# /coverage/
-# /db/*.sqlite3
-# /db/*.sqlite3-[0-9]*
-# /db/*.sqlite3-journal
-# /public/system
-# /spec/examples.txt
-# /spec/reports/
-# /spec/tmp
-# /test/tmp/
-# /test/version_tmp/
-# capybara-*.html
-# pickle-email-*.html
-# rerun.txt
-# test/dummy/db/*.sqlite3
-# test/dummy/db/*.sqlite3-journal
-# test/dummy/log/*.log
-# test/dummy/node_modules/
-# test/dummy/storage/
-# test/dummy/tmp/
-# test/dummy/yarn-error.log
+## doccy stuff
+/.yardoc/
+/_yardoc/
+/doc/
+/rdoc/
 
-# # debuggy stuff
-# .byebug_history
+## bundly stuff
+/.bundle/
+/vendor/bundle
+/lib/bundler/man/
 
-# ## doccy stuff
-# /.yardoc/
-# /_yardoc/
-# /doc/
-# /rdoc/
+# "for a library or gem, you might want to ignore these files since the code is
+# intended to run in multiple environments"
+Gemfile.lock
+.ruby-version
+.ruby-gemset
 
-# ## bundly stuff
-# /.bundle/
-# /vendor/bundle
-# /lib/bundler/man/
+# rvmmy stuff
+.rvmrc
 
-# # "for a library or gem, you might want to ignore these files since the code is
-# # intended to run in multiple environments"
-# Gemfile.lock
-# .ruby-version
-# .ruby-gemset
+# editory stuff
+.idea
+.vscode
+*.rdb
 
-# # rvmmy stuff
-# .rvmrc
-
-# # editory stuff
-# .idea
-# .vscode
-# *.rdb
-
-# # systemy stuff
-# *.swm
-# *.swn
-# *.swo
-# *.swp
-# *.DS_Store
+# systemy stuff
+*.swm
+*.swn
+*.swo
+*.swp
+*.DS_Store
