@@ -1,0 +1,124 @@
+require 'adornable/utils'
+require 'adornable/error'
+
+module Adornable
+  class Machinery
+    def register_decorator_receiver!(receiver)
+      registered_decorator_receivers.unshift(receiver)
+    end
+
+    def accumulate_decorator!(name:, receiver:, defer_validation:)
+      name = name.to_sym
+      receiver ||= find_suitable_receiver_for(name)
+      validate_decorator!(name, receiver) unless defer_validation
+
+      decorator = { name: name, receiver: receiver }
+      accumulated_decorators << decorator
+    end
+
+    def has_accumulated_decorators?
+      Adornable::Utils.present?(accumulated_decorators)
+    end
+
+    def apply_accumulated_decorators_to_instance_method!(method_name)
+      set_instance_method_decorators!(method_name, accumulated_decorators)
+      clear_accumulated_decorators!
+    end
+
+    def apply_accumulated_decorators_to_class_method!(method_name)
+      set_class_method_decorators!(method_name, accumulated_decorators)
+      clear_accumulated_decorators!
+    end
+
+    def run_decorated_instance_method(bound_method, *args)
+      decorators = get_instance_method_decorators(bound_method.name)
+      run_decorators(decorators, bound_method, *args)
+    end
+
+    def run_decorated_class_method(bound_method, *args)
+      decorators = get_class_method_decorators(bound_method.name)
+      run_decorators(decorators, bound_method, *args)
+    end
+
+    private
+
+    def registered_decorator_receivers
+      @registered_decorator_receivers ||= [Adornable::Decorators]
+    end
+
+    def accumulated_decorators
+      @accumulated_decorators ||= []
+    end
+
+    def clear_accumulated_decorators!
+      @accumulated_decorators = []
+    end
+
+    def get_instance_method_decorators(method_name)
+      name = method_name.to_sym
+      @instance_method_decorators ||= {}
+      @instance_method_decorators[name] ||= []
+      @instance_method_decorators[name]
+    end
+
+    def set_instance_method_decorators!(method_name, decorators)
+      name = method_name.to_sym
+      @instance_method_decorators ||= {}
+      @instance_method_decorators[name] = decorators || []
+    end
+
+    def get_class_method_decorators(method_name)
+      name = method_name.to_sym
+      @class_method_decorators ||= {}
+      @class_method_decorators[name] ||= []
+      @class_method_decorators[name]
+    end
+
+    def set_class_method_decorators!(method_name, decorators)
+      name = method_name.to_sym
+      @class_method_decorators ||= {}
+      @class_method_decorators[name] = decorators || []
+    end
+
+    def run_decorators(decorators, bound_method, *args)
+      return bound_method.call(*args) if Adornable::Utils.blank?(decorators)
+      decorator, *remaining_decorators = decorators
+      name = decorator[:name]
+      receiver = decorator[:receiver]
+      validate_decorator!(name, receiver, bound_method)
+      receiver.send(name, bound_method.receiver, bound_method.name, args) do
+        run_decorators(remaining_decorators, bound_method, *args)
+      end
+    end
+
+    def find_suitable_receiver_for(decorator_name)
+      registered_decorator_receivers.detect do |receiver|
+        receiver.respond_to?(decorator_name)
+      end
+    end
+
+    def validate_decorator!(decorator_name, decorator_receiver, bound_method = nil)
+      return if decorator_receiver.respond_to?(decorator_name)
+
+      location_hint = if bound_method
+        method_receiver = bound_method.receiver
+        method_full_name = method_receiver.is_a?(Class) ? "#{method_receiver}::#{method.name}" : "#{method_receiver.class}##{method.name}"
+        method_location = bound_method.source_location
+        "Cannot decorate `#{method_full_name}` (defined at `#{method_location.first}:#{method_location.second})."
+      end
+      
+      base_message = "Decorator method `#{decorator_name.inspect}` cannot be found on `#{decorator_receiver.inspect}`."
+
+      definition_hint = if decorator_receiver.is_a?(Class) && decorator_receiver.instance_methods.include?(decorator_name)
+        class_name = decorator_receiver.inspect
+        "It is, however, an instance method of the class. To use this decorator method, either A) supply an instance of the `#{class_name}` class to the `found_on:` option (instead of the class itself), B) convert the instance method `#{class_name}##{decorator_name}` to a class method, or C) create a new class method on `#{class_name}` of the same decorator_name."
+      elsif !decorator_receiver.is_a?(Class) && decorator_receiver.class.methods.include?(decorator_name)
+        class_name = decorator_receiver.class.inspect
+        "It is, however, a method of this instance's class. To use this decorator method, either A) supply the `#{class_name}` class itself to the `found_on:` option (instead of an instance of that class), B) convert the class method `#{class_name}::#{decorator_name}` to an instance method, or C) create a new instance method on `#{class_name}` of the same name."
+      end
+
+      message = [location_hint, base_message, definition_hint].compact.join(" ")
+      raise Adornable::Error::InvalidDecoratorArguments, message
+    end
+  end
+end

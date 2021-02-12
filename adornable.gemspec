@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Keegan Leitz"]
   spec.email         = ["kjleitz@gmail.com"]
 
-  spec.summary       = "Decorators for Ruby"
-  spec.description   = "Decorators for Ruby"
+  spec.summary       = "Method decorators for Ruby"
+  spec.description   = "Method decorators for Ruby"
   spec.homepage      = "https://github.com/kjleitz/adornable"
 
   # Specify which files should be added to the gem when it is released.

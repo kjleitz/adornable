@@ -1,89 +1,50 @@
 require "adornable/version"
+require "adornable/utils"
 require "adornable/error"
 require "adornable/decorators"
+require "adornable/machinery"
 
 module Adornable
-  # def poopytown
-  #   puts "poopytown start"
-  #   val = yield
-  #   puts "poopytown end"
-  #   val
-  # end
-
-  # def poopytown2
-  #   puts "poopytown2 start"
-  #   val = yield
-  #   puts "poopytown2 end"
-  #   val
-  # end
-
-  # def poopytown3
-  #   puts "poopytown3 start"
-  #   val = yield
-  #   puts "poopytown3 end"
-  #   val
-  # end
-
-  # def poopytown4
-  #   puts "poopytown4 start"
-  #   val = yield
-  #   puts "poopytown4 end"
-  #   val
-  # end
-
-  # def poopytown5
-  #   puts "poopytown5 start"
-  #   val = yield
-  #   puts "poopytown5 end"
-  #   val
-  # end
-
-  def decorate(decorator)
-    @accumulated_decorators ||= []
-    @accumulated_decorators << decorator
+  def adornable_machinery
+    @adornable_machinery ||= Adornable::Machinery.new
   end
 
-  def run_decorators(decorator_names, bound_method, *args)
-    return bound_method.call(*args) if !decorator_names || decorator_names.empty?
-    decorator_name, *remaining_decorator_names = decorator_names
-    Adornable::Decorators.new.send(decorator_name, bound_method.receiver, bound_method.name, args) do
-      run_decorators(remaining_decorator_names, bound_method, *args)
+  def decorate(decorator_name, from: nil, defer_validation: false)
+    if Adornable::Utils.blank?(name)
+      raise Adornable::Error::InvalidDecoratorArguments, "Decorator name must be provided."
     end
+
+    adornable_machinery.accumulate_decorator!(
+      name: decorator_name,
+      receiver: from,
+      defer_validation: !!defer_validation
+    )
   end
 
-  def method_added(name)
-    return if !@accumulated_decorators || @accumulated_decorators.empty?
-    @decorators_for_instance_method ||= {}
-    @decorators_for_instance_method[name] = @accumulated_decorators
-    @accumulated_decorators = []
-    decorator_names = @decorators_for_instance_method[name]
-    original_method = self.instance_method(name)
-    define_method(name) do |*args|
-      self.class.run_decorators(decorator_names, original_method.bind(self), *args)
+  def add_decorators_from(receiver)
+    adornable_machinery.register_decorator_receiver!(receiver)
+  end
+
+  def method_added(method_name)
+    machinery = adornable_machinery # for local variable
+    return unless machinery.has_accumulated_decorators?
+    machinery.apply_accumulated_decorators_to_instance_method!(method_name)
+    original_method = self.instance_method(method_name)
+    define_method(method_name) do |*args|
+      bound_method = original_method.bind(self)
+      machinery.run_decorated_instance_method(bound_method, *args)
     end
+    super
   end
 
-  def singleton_method_added(name)
-    return if !@accumulated_decorators || @accumulated_decorators.empty?
-    @decorators_for_singleton_method ||= {}
-    @decorators_for_singleton_method[name] = @accumulated_decorators
-    @accumulated_decorators = []
-    decorator_names = @decorators_for_singleton_method[name]
-    original_method = self.method(name)
-    define_singleton_method(name) do |*args|
-      run_decorators(decorator_names, original_method, *args)
+  def singleton_method_added(method_name)
+    machinery = adornable_machinery # for local variable
+    return unless machinery.has_accumulated_decorators?
+    machinery.apply_accumulated_decorators_to_class_method!(method_name)
+    original_method = self.method(method_name)
+    define_singleton_method(method_name) do |*args|
+      machinery.run_decorated_class_method(original_method, *args)
     end
+    super
   end
-
-  # def decorate(foobar)
-  #   define_singleton_method(:singleton_method_added) do |name|
-  #     puts "hi singleton method #{name} (#{foobar})"
-  #     undef_method(:singleton_method_added)
-  #   end
-
-  #   define_singleton_method(:method_added) do |name|
-  #     puts "hi method #{name} (#{foobar})"
-  #     undef_method(:method_added)
-  #   end
-  # end
 end
