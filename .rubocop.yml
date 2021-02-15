@@ -1,0 +1,59 @@
+require:
+  - rubocop-performance
+  - rubocop-rspec
+  - rubocop-rake
+
+# Layout
+
+Layout/LineLength:
+  Max: 120
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - 'test/**/*_spec.rb'
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
+# Metrics
+
+Metrics/AbcSize:
+  CountRepeatedAttributes: false
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - 'test/**/*_spec.rb'
+
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - 'test/**/*_spec.rb'
+
+Metrics/ClassLength:
+  Exclude:
+    - 'spec/**/*_spec.rb'
+    - 'test/**/*_spec.rb'
+
+# Rspec
+
+RSpec/ExampleLength:
+  Max: 20
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Max: 5
+
+RSpec/NestedGroups:
+  Max: 10
+
+# Style
+
+Style/DoubleNegation:
+  Enabled: false
+
+Style/ExpandPathArguments:
+  Exclude:
+    - 'adornable.gemspec'
+
+Style/StringLiterals:
+  Enabled: false

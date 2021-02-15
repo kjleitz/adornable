@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 require 'adornable/utils'
 require 'adornable/error'
 
 module Adornable
-  class Machinery
+  class Machinery # :nodoc:
     def register_decorator_receiver!(receiver)
       registered_decorator_receivers.unshift(receiver)
     end
@@ -16,7 +18,7 @@ module Adornable
       accumulated_decorators << decorator
     end
 
-    def has_accumulated_decorators?
+    def accumulated_decorators?
       Adornable::Utils.present?(accumulated_decorators)
     end
 
@@ -82,6 +84,7 @@ module Adornable
 
     def run_decorators(decorators, bound_method, *args)
       return bound_method.call(*args) if Adornable::Utils.blank?(decorators)
+
       decorator, *remaining_decorators = decorators
       name = decorator[:name]
       receiver = decorator[:receiver]
@@ -97,16 +100,19 @@ module Adornable
       end
     end
 
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Layout/LineLength
     def validate_decorator!(decorator_name, decorator_receiver, bound_method = nil)
       return if decorator_receiver.respond_to?(decorator_name)
 
       location_hint = if bound_method
         method_receiver = bound_method.receiver
+
         method_full_name = method_receiver.is_a?(Class) ? "#{method_receiver}::#{method.name}" : "#{method_receiver.class}##{method.name}"
+
         method_location = bound_method.source_location
         "Cannot decorate `#{method_full_name}` (defined at `#{method_location.first}:#{method_location.second})."
       end
-      
+
       base_message = "Decorator method `#{decorator_name.inspect}` cannot be found on `#{decorator_receiver.inspect}`."
 
       definition_hint = if decorator_receiver.is_a?(Class) && decorator_receiver.instance_methods.include?(decorator_name)
@@ -120,5 +126,6 @@ module Adornable
       message = [location_hint, base_message, definition_hint].compact.join(" ")
       raise Adornable::Error::InvalidDecoratorArguments, message
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Layout/LineLength
   end
 end

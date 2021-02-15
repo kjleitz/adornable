@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 module Adornable
-  class Utils
+  class Utils # :nodoc:
     class << self
       def blank?(value)
         value.nil? || (value.respond_to?(:empty?) && value.empty?)

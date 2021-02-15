@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Adornable
   module Error
     class Base < ::StandardError
