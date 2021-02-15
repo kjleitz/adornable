@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    adornable (1.0.2)
+    adornable (1.0.3)
 
 GEM
   remote: https://rubygems.org/
