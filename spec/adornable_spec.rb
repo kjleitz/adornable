@@ -185,6 +185,52 @@ class Foobar
   def self.custom_implicit_local_decorated_class_method(foo, bar:)
     "we are in self.custom_implicit_local_decorated_class_method"
   end
+
+  ###
+
+  decorate :log
+  def logged_instance_method(foo, bar:)
+    rand
+  end
+
+  decorate :log
+  def logged_instance_method_no_args
+    rand
+  end
+
+  decorate :log
+  def self.logged_class_method(foo, bar:)
+    rand
+  end
+
+  decorate :log
+  def self.logged_class_method_no_args
+    rand
+  end
+
+  ###
+
+  decorate :memoize
+  def memoized_instance_method(foo, bar:)
+    rand
+  end
+
+  decorate :memoize
+  def self.memoized_class_method(foo, bar:)
+    rand
+  end
+
+  ###
+
+  decorate :memoize_for_arguments
+  def memoized_instance_method_for_args(foo, bar:)
+    rand
+  end
+
+  decorate :memoize_for_arguments
+  def self.memoized_class_method_for_args(foo, bar:)
+    rand
+  end
 end
 
 RSpec.describe Adornable do
@@ -437,6 +483,161 @@ RSpec.describe Adornable do
 
       returned = Foobar.custom_implicit_local_decorated_class_method("foo", bar: "bar")
       expect(returned).to eq("we are in self.custom_implicit_local_decorated_class_method - now that's what I call a class method!")
+    end
+  end
+
+  context "using built-in decorators" do
+    describe ":log" do
+      context "for instance methods" do
+        it "logs the method with arguments to STDOUT" do
+          foobar = Foobar.new
+          normal_args = [123]
+          keyword_args = { bar: { baz: [:hi, "there"] } }
+          all_args = [*normal_args, **keyword_args]
+          expected_log = "Calling method `Foobar#logged_instance_method` with arguments `#{all_args.inspect}`\n"
+          expect {
+            foobar.logged_instance_method(*normal_args, **keyword_args)
+          }.to output(expected_log).to_stdout
+        end
+
+        it "logs the method with no arguments to STDOUT" do
+          foobar = Foobar.new
+          expected_log = "Calling method `Foobar#logged_instance_method_no_args` with no arguments\n"
+          expect { foobar.logged_instance_method_no_args }.to output(expected_log).to_stdout
+        end
+      end
+
+      context "for class methods" do
+        it "logs the method with arguments to STDOUT" do
+          normal_args = [123]
+          keyword_args = { bar: { baz: [:hi, "there"] } }
+          all_args = [*normal_args, **keyword_args]
+          expected_log = "Calling method `Foobar::logged_class_method` with arguments `#{all_args.inspect}`\n"
+          expect {
+            Foobar.logged_class_method(*normal_args, **keyword_args)
+          }.to output(expected_log).to_stdout
+        end
+
+        it "logs the method with no arguments to STDOUT" do
+          expected_log = "Calling method `Foobar::logged_class_method_no_args` with no arguments\n"
+          expect { Foobar.logged_class_method_no_args }.to output(expected_log).to_stdout
+        end
+      end
+    end
+
+    describe ":memoize" do
+      context "for instance methods" do
+        it "returns the cached value after being called" do
+          foobar = Foobar.new
+          value1 = foobar.memoized_instance_method(123, bar: 456)
+          value2 = foobar.memoized_instance_method(123, bar: 456)
+          value3 = foobar.memoized_instance_method("whoa", bar: [1, 2, 3])
+          expect(value1).to eq(value2)
+          expect(value2).to eq(value3)
+        end
+      end
+
+      context "for class methods" do
+        it "returns the cached value after being called" do
+          value1 = Foobar.memoized_class_method(123, bar: 456)
+          value2 = Foobar.memoized_class_method(123, bar: 456)
+          value3 = Foobar.memoized_class_method("whoa", bar: [1, 2, 3])
+          expect(value1).to eq(value2)
+          expect(value2).to eq(value3)
+        end
+      end
+    end
+
+    describe ":memoize_for_arguments" do
+      context "for instance methods" do
+        it "returns the cached value when given the same simple arguments" do
+          foobar = Foobar.new
+          value1 = foobar.memoized_instance_method_for_args(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args(123, bar: 456)
+          expect(value1).to eq(value2)
+        end
+
+        it "returns the cached value when given the same complex arguments" do
+          foobar = Foobar.new
+          value1 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          expect(value1).to eq(value2)
+        end
+
+        it "returns a new value when given different simple arguments" do
+          foobar = Foobar.new
+
+          value1 = foobar.memoized_instance_method_for_args(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args(123, bar: 456)
+          expect(value1).to eq(value2)
+
+          value1 = foobar.memoized_instance_method_for_args(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args(456, bar: 456)
+          expect(value1).not_to eq(value2)
+
+          value1 = foobar.memoized_instance_method_for_args(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args(123, bar: 123)
+          expect(value1).not_to eq(value2)
+        end
+
+        it "returns a new value when given different complex arguments" do
+          foobar = Foobar.new
+
+          value1 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          expect(value1).to eq(value2)
+
+          value1 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args("[1, 2, 3]", bar: { baz: true, bam: [:hi, "there"] })
+          expect(value1).not_to eq(value2)
+
+          value1 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: ["hi", "there"] })
+          expect(value1).not_to eq(value2)
+        end
+      end
+
+      context "for class methods" do
+        it "returns the cached value when given the same simple arguments" do
+          value1 = Foobar.memoized_class_method_for_args(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args(123, bar: 456)
+          expect(value1).to eq(value2)
+        end
+
+        it "returns the cached value when given the same complex arguments" do
+          value1 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          expect(value1).to eq(value2)
+        end
+
+        it "returns a new value when given different simple arguments" do
+          value1 = Foobar.memoized_class_method_for_args(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args(123, bar: 456)
+          expect(value1).to eq(value2)
+
+          value1 = Foobar.memoized_class_method_for_args(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args(456, bar: 456)
+          expect(value1).not_to eq(value2)
+
+          value1 = Foobar.memoized_class_method_for_args(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args(123, bar: 123)
+          expect(value1).not_to eq(value2)
+        end
+
+        it "returns a new value when given different complex arguments" do
+          value1 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          expect(value1).to eq(value2)
+
+          value1 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args("[1, 2, 3]", bar: { baz: true, bam: [:hi, "there"] })
+          expect(value1).not_to eq(value2)
+
+          value1 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: ["hi", "there"] })
+          expect(value1).not_to eq(value2)
+        end
+      end
     end
   end
 end
