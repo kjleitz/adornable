@@ -1,10 +1,15 @@
+# frozen_string_literal: true
+
+# rubocop:disable Lint/UnusedMethodArgument
 class FoobarExplicitDecorators
   def self.blast_it(method_receiver, method_name, arguments)
     value = yield
     "#{value}!"
   end
 end
+# rubocop:enable Lint/UnusedMethodArgument
 
+# rubocop:disable Lint/UnusedMethodArgument
 class FoobarImplicitDecorators
   def self.wait_for_it(method_receiver, method_name, arguments)
     value = yield
@@ -16,14 +21,18 @@ class FoobarImplicitDecorators
     "#{value}...!"
   end
 end
+# rubocop:enable Lint/UnusedMethodArgument
 
+# rubocop:disable Lint/UnusedMethodArgument
 class FoobarImplicitDecorators2
   def self.wait_for_it_excitedly(method_receiver, method_name, arguments)
     value = yield
     "#{value}...WOO!"
   end
 end
+# rubocop:enable Lint/UnusedMethodArgument
 
+# rubocop:disable Lint/UnusedMethodArgument
 class Foobar
   extend Adornable
 
@@ -72,6 +81,7 @@ class Foobar
 
   ###
 
+  # rubocop:disable Lint/DuplicateMethods
   decorate :log
   def shadowed_instance_method_both_have_decorator(foo, bar:)
     "we are in shadowed_instance_method_both_have_decorator"
@@ -81,9 +91,11 @@ class Foobar
   def shadowed_instance_method_both_have_decorator(foo, bar:)
     "we are in shadowed_instance_method_both_have_decorator"
   end
+  # rubocop:enable Lint/DuplicateMethods
 
   ###
 
+  # rubocop:disable Lint/DuplicateMethods
   decorate :log
   def shadowed_instance_method_decorator_removed(foo, bar:)
     "we are in shadowed_instance_method_decorator_removed"
@@ -92,9 +104,11 @@ class Foobar
   def shadowed_instance_method_decorator_removed(foo, bar:)
     "we are in shadowed_instance_method_decorator_removed"
   end
+  # rubocop:enable Lint/DuplicateMethods
 
   ###
 
+  # rubocop:disable Lint/DuplicateMethods
   def shadowed_instance_method_decorator_added(foo, bar:)
     "we are in shadowed_instance_method_decorator_added"
   end
@@ -103,9 +117,11 @@ class Foobar
   def shadowed_instance_method_decorator_added(foo, bar:)
     "we are in shadowed_instance_method_decorator_added"
   end
+  # rubocop:enable Lint/DuplicateMethods
 
   ###
 
+  # rubocop:disable Lint/DuplicateMethods
   decorate :log
   def self.shadowed_class_method_both_have_decorator(foo, bar:)
     "we are in self.shadowed_class_method_both_have_decorator"
@@ -115,9 +131,11 @@ class Foobar
   def self.shadowed_class_method_both_have_decorator(foo, bar:)
     "we are in self.shadowed_class_method_both_have_decorator"
   end
+  # rubocop:enable Lint/DuplicateMethods
 
   ###
 
+  # rubocop:disable Lint/DuplicateMethods
   decorate :log
   def self.shadowed_class_method_decorator_removed(foo, bar:)
     "we are in self.shadowed_class_method_decorator_removed"
@@ -126,9 +144,11 @@ class Foobar
   def self.shadowed_class_method_decorator_removed(foo, bar:)
     "we are in self.shadowed_class_method_decorator_removed"
   end
+  # rubocop:enable Lint/DuplicateMethods
 
   ###
 
+  # rubocop:disable Lint/DuplicateMethods
   def self.shadowed_class_method_decorator_added(foo, bar:)
     "we are in self.shadowed_class_method_decorator_added"
   end
@@ -137,6 +157,7 @@ class Foobar
   def self.shadowed_class_method_decorator_added(foo, bar:)
     "we are in self.shadowed_class_method_decorator_added"
   end
+  # rubocop:enable Lint/DuplicateMethods
 
   ###
 
@@ -232,13 +253,14 @@ class Foobar
     rand
   end
 end
+# rubocop:enable Lint/UnusedMethodArgument
 
 RSpec.describe Adornable do
   it "has a version number" do
     expect(Adornable::VERSION).not_to be nil
   end
 
-  context "instance methods" do
+  context "when decorating instance methods" do
     it "does not decorate undecorated instance methods" do
       foobar = Foobar.new
 
@@ -281,7 +303,7 @@ RSpec.describe Adornable do
     end
   end
 
-  context "class methods" do
+  context "when decorating class methods" do
     it "does not decorate undecorated class methods" do
       expect(Adornable::Decorators).not_to receive(:log)
 
@@ -318,7 +340,7 @@ RSpec.describe Adornable do
     end
   end
 
-  context "shadowed instance methods" do
+  context "when decorating shadowed instance methods" do
     it "only decorates once if both have decorators" do
       foobar = Foobar.new
 
@@ -355,7 +377,7 @@ RSpec.describe Adornable do
     end
   end
 
-  context "shadowed class methods" do
+  context "when decorating shadowed class methods" do
     it "only decorates once if both have decorators" do
       expect(Adornable::Decorators).to receive(:log).with(
         Foobar,
@@ -386,7 +408,7 @@ RSpec.describe Adornable do
     end
   end
 
-  context "using custom decorator methods explicitly" do
+  context "when using custom decorator methods explicitly" do
     it "decorates the instance method with a method found on the specified receiver" do
       foobar = Foobar.new
 
@@ -412,7 +434,7 @@ RSpec.describe Adornable do
     end
   end
 
-  context "using custom decorator methods implicitly" do
+  context "when using custom decorator methods implicitly" do
     it "decorates the instance method with a method found on the specified receiver" do
       foobar = Foobar.new
 
@@ -486,18 +508,18 @@ RSpec.describe Adornable do
     end
   end
 
-  context "using built-in decorators" do
+  context "when using built-in decorators" do
     describe ":log" do
-      context "for instance methods" do
+      context "when decorating instance methods" do
         it "logs the method with arguments to STDOUT" do
           foobar = Foobar.new
           normal_args = [123]
           keyword_args = { bar: { baz: [:hi, "there"] } }
-          all_args = [*normal_args, **keyword_args]
+          all_args = [*normal_args, keyword_args]
           expected_log = "Calling method `Foobar#logged_instance_method` with arguments `#{all_args.inspect}`\n"
-          expect {
+          expect do
             foobar.logged_instance_method(*normal_args, **keyword_args)
-          }.to output(expected_log).to_stdout
+          end.to output(expected_log).to_stdout
         end
 
         it "logs the method with no arguments to STDOUT" do
@@ -507,15 +529,15 @@ RSpec.describe Adornable do
         end
       end
 
-      context "for class methods" do
+      context "when decorating class methods" do
         it "logs the method with arguments to STDOUT" do
           normal_args = [123]
           keyword_args = { bar: { baz: [:hi, "there"] } }
-          all_args = [*normal_args, **keyword_args]
+          all_args = [*normal_args, keyword_args]
           expected_log = "Calling method `Foobar::logged_class_method` with arguments `#{all_args.inspect}`\n"
-          expect {
+          expect do
             Foobar.logged_class_method(*normal_args, **keyword_args)
-          }.to output(expected_log).to_stdout
+          end.to output(expected_log).to_stdout
         end
 
         it "logs the method with no arguments to STDOUT" do
@@ -526,7 +548,7 @@ RSpec.describe Adornable do
     end
 
     describe ":memoize" do
-      context "for instance methods" do
+      context "when decorating instance methods" do
         it "returns the cached value after being called" do
           foobar = Foobar.new
           value1 = foobar.memoized_instance_method(123, bar: 456)
@@ -537,7 +559,7 @@ RSpec.describe Adornable do
         end
       end
 
-      context "for class methods" do
+      context "when decorating class methods" do
         it "returns the cached value after being called" do
           value1 = Foobar.memoized_class_method(123, bar: 456)
           value2 = Foobar.memoized_class_method(123, bar: 456)
@@ -549,7 +571,7 @@ RSpec.describe Adornable do
     end
 
     describe ":memoize_for_arguments" do
-      context "for instance methods" do
+      context "when decorating instance methods" do
         it "returns the cached value when given the same simple arguments" do
           foobar = Foobar.new
           value1 = foobar.memoized_instance_method_for_args(123, bar: 456)
@@ -592,12 +614,12 @@ RSpec.describe Adornable do
           expect(value1).not_to eq(value2)
 
           value1 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: ["hi", "there"] })
+          value2 = foobar.memoized_instance_method_for_args([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
           expect(value1).not_to eq(value2)
         end
       end
 
-      context "for class methods" do
+      context "when decorating class methods" do
         it "returns the cached value when given the same simple arguments" do
           value1 = Foobar.memoized_class_method_for_args(123, bar: 456)
           value2 = Foobar.memoized_class_method_for_args(123, bar: 456)
@@ -634,7 +656,7 @@ RSpec.describe Adornable do
           expect(value1).not_to eq(value2)
 
           value1 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: ["hi", "there"] })
+          value2 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
           expect(value1).not_to eq(value2)
         end
       end

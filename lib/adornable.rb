@@ -1,9 +1,13 @@
+# frozen_string_literal: true
+
 require "adornable/version"
 require "adornable/utils"
 require "adornable/error"
 require "adornable/decorators"
 require "adornable/machinery"
 
+# Extend the `Adornable` module in your class in order to have access to the
+# `decorate` and `add_decorators_from` macros.
 module Adornable
   def adornable_machinery
     @adornable_machinery ||= Adornable::Machinery.new
@@ -27,9 +31,10 @@ module Adornable
 
   def method_added(method_name)
     machinery = adornable_machinery # for local variable
-    return unless machinery.has_accumulated_decorators?
+    return unless machinery.accumulated_decorators?
+
     machinery.apply_accumulated_decorators_to_instance_method!(method_name)
-    original_method = self.instance_method(method_name)
+    original_method = instance_method(method_name)
     define_method(method_name) do |*args|
       bound_method = original_method.bind(self)
       machinery.run_decorated_instance_method(bound_method, *args)
@@ -39,9 +44,10 @@ module Adornable
 
   def singleton_method_added(method_name)
     machinery = adornable_machinery # for local variable
-    return unless machinery.has_accumulated_decorators?
+    return unless machinery.accumulated_decorators?
+
     machinery.apply_accumulated_decorators_to_class_method!(method_name)
-    original_method = self.method(method_name)
+    original_method = method(method_name)
     define_singleton_method(method_name) do |*args|
       machinery.run_decorated_class_method(original_method, *args)
     end
