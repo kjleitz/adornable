@@ -13,7 +13,7 @@ module Adornable
     @adornable_machinery ||= Adornable::Machinery.new
   end
 
-  def decorate(decorator_name, from: nil, defer_validation: false)
+  def decorate(decorator_name, from: nil, defer_validation: false, **decorator_options)
     if Adornable::Utils.blank?(name)
       raise Adornable::Error::InvalidDecoratorArguments, "Decorator name must be provided."
     end
@@ -21,7 +21,8 @@ module Adornable
     adornable_machinery.accumulate_decorator!(
       name: decorator_name,
       receiver: from,
-      defer_validation: !!defer_validation
+      defer_validation: !!defer_validation,
+      decorator_options: decorator_options,
     )
   end
 

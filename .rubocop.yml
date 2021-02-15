@@ -9,10 +9,12 @@ Layout/LineLength:
   Max: 120
   Exclude:
     - 'spec/**/*_spec.rb'
-    - 'test/**/*_spec.rb'
 
 Layout/EndAlignment:
   EnforcedStyleAlignWith: variable
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
 
 # Metrics
 
@@ -20,17 +22,38 @@ Metrics/AbcSize:
   CountRepeatedAttributes: false
   Exclude:
     - 'spec/**/*_spec.rb'
-    - 'test/**/*_spec.rb'
 
 Metrics/BlockLength:
   Exclude:
     - 'spec/**/*_spec.rb'
-    - 'test/**/*_spec.rb'
 
 Metrics/ClassLength:
+  Max: 150
+  CountComments: false
+  CountAsOne:
+    - array
+    - hash
+    - heredoc
   Exclude:
     - 'spec/**/*_spec.rb'
-    - 'test/**/*_spec.rb'
+
+Metrics/MethodLength:
+  Max: 20
+  CountComments: false
+  CountAsOne:
+    - array
+    - hash
+    - heredoc
+
+Metrics/ModuleLength:
+  Max: 150
+  CountComments: false
+  CountAsOne:
+    - array
+    - hash
+    - heredoc
+  Exclude:
+    - 'spec/**/*_spec.rb'
 
 # Rspec
 
@@ -41,7 +64,7 @@ RSpec/MessageSpies:
   Enabled: false
 
 RSpec/MultipleExpectations:
-  Max: 5
+  Enabled: false
 
 RSpec/NestedGroups:
   Max: 10
@@ -57,3 +80,12 @@ Style/ExpandPathArguments:
 
 Style/StringLiterals:
   Enabled: false
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: consistent_comma
