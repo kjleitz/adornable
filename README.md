@@ -340,10 +340,16 @@ foo.some_method
 bin/setup
 ```
 
-### Run testss
+### Run the tests
 
 ```bash
 rake spec
+```
+
+### Run the linter
+
+```bash
+bundle exec rubocop
 ```
 
 ### Create release
