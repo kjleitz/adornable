@@ -122,7 +122,7 @@ module Adornable
       end
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Layout/LineLength
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Layout/LineLength
     def validate_decorator!(decorator_name, decorator_receiver, bound_method = nil)
       return if decorator_receiver.respond_to?(decorator_name)
 
@@ -146,6 +146,6 @@ module Adornable
       message = [location_hint, base_message, definition_hint].compact.join(" ")
       raise Adornable::Error::InvalidDecoratorArguments, message
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Layout/LineLength
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Layout/LineLength
   end
 end

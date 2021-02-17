@@ -3,6 +3,11 @@ require:
   - rubocop-rspec
   - rubocop-rake
 
+# Globals
+
+AllCops:
+  NewCops: enable
+
 # Layout
 
 Layout/LineLength:
@@ -58,7 +63,7 @@ Metrics/ModuleLength:
 # Rspec
 
 RSpec/ExampleLength:
-  Max: 20
+  Max: 25
 
 RSpec/MessageSpies:
   Enabled: false
