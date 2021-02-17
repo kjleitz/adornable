@@ -1,6 +1,6 @@
 # Adornable
 
-Adornable provides method decorators in Ruby... 'nuff said.
+Adornable provides the ability to cleanly decorate methods in Ruby. You can make and use your own decorators, and you can also use some of the built-in ones that the gem provides. _Decorating_ methods is as simple as slapping a `decorate :some_decorator` above your method definition. _Defining_ decorators can be as simple as defining a method that yields to a block, or as complex as manipulating the decorated method's receiver and arguments, and/or changing the functionality of the decorator based on custom options supplied to it when initially applying the decorator.
 
 ## Installation
 
@@ -25,8 +25,6 @@ Alternatively, install it globally:
 ```bash
 gem install adornable
 ```
-
-...but why would you do that?
 
 ## Usage
 
@@ -75,9 +73,9 @@ value2 = random_value_generator.value
 #=> 0.4196007135344746
 ```
 
-...but you have a million more methods to write, and if you refactor, you'll have to screw around with a whole metric butt-load of method definitions across your app.
+However, you have a million more methods to write, and if you refactor, you'll have to screw around with a slew of method definitions across your app.
 
-How about this instead?
+What if you could do this, instead, to achieve the same result?
 
 ```rb
 class RandomValueGenerator
@@ -95,28 +93,6 @@ class RandomValueGenerator
     (1..max).map { rand }
   end
 end
-
-random_value_generator = RandomValueGenerator.new
-
-values1 = random_value_generator.values(1000)
-# Calling method `RandomValueGenerator#values` with arguments `[1000]`
-#=> [0.7044444114998132, 0.401953296596267, 0.3023797513191562, ...]
-
-values1 = random_value_generator.values(1000)
-# Calling method `RandomValueGenerator#values` with arguments `[1000]`
-#=> [0.7044444114998132, 0.401953296596267, 0.3023797513191562, ...]
-
-values3 = random_value_generator.values(5000)
-# Calling method `RandomValueGenerator#values` with arguments `[5000]`
-#=> [0.9916088057511011, 0.04466750434972333, 0.6073659341272127]
-
-value1 = random_value_generator.value
-# Calling method `RandomValueGenerator#value` with no arguments
-#=> 0.4196007135344746
-
-value2 = random_value_generator.value
-# Calling method `RandomValueGenerator#value` with no arguments
-#=> 0.4196007135344746
 ```
 
 Nice, right?
@@ -141,7 +117,7 @@ Use the `decorate` macro to decorate methods.
 
 #### Using built-in decorators
 
-There are a few built-in decorators:
+There are a couple of built-in decorators for common use-cases (these can be overridden if you so choose):
 
 ```rb
 class Foo
@@ -183,21 +159,25 @@ end
 
 > **Note:** in the case of multiple decorators decorating a method, each is executed from top to bottom.
 
-#### Using custom decorators explicitly
+#### Writing custom decorators and using them _explicitly_
 
 You can reference any decorator method you write, like so:
 
 ```rb
 class FooDecorators
-  # Note: this is a class method
+  # Note: this is defined as a CLASS method, but it can be applied to both class
+  #       and instance methods. The only difference is in how you source the
+  #       decorator when doing the decoration; see below for more info.
   def self.blast_it(context)
     puts "Blasting it!"
     value = yield
     "#{value}!"
   end
 
-  # Note: this is an instance method
-  def self.wait_for_it(context, dot_count: 3)
+  # Note: this is defined as an INSTANCE method, but it can be applied to both
+  #       class and instance methods. The only difference is in how you source
+  #       the decorator when doing the decoration; see below for more info.
+  def wait_for_it(context, dot_count: 3)
     ellipsis = dot_count.times.map { '.' }.join
     puts "Waiting for it#{ellipsis}"
     value = yield
@@ -241,23 +221,29 @@ foo.yet_another_method(123, bloop: "bleep")
 #=> "haha I'm yet another method"
 ```
 
-Use the `from:` option to specify what should receive the decorator method. Keep in mind that the decorator method will be called on the thing specified by `from:`... so, if you provide a class, it better be a class method, and if you supply an instance, it better be an instance method.
+Use the `from:` option to specify what should receive the decorator method. Keep in mind that the decorator method will be called on the thing specified by `from:`... so, if you provide a class, it better be a class method on that thing, and if you supply an instance, it better be an instance method on that thing.
 
-Every custom decorator method that you define must take one required argument (`context`) and any number of keyword arguments.
+Every custom decorator method that you define must take one required argument (`context`) and any number of keyword arguments. It should also `yield` (or take a block argument and invoke it) at some point in the body of the method. The point at which you `yield` will be the point at which the decorated method will execute (or, if there are multiple decorators on the method, each following decorator will be invoked until the decorators have been exhausted and the decorated method is finally executed).
+
+##### The required argument (`context`)
 
 The **required argument** is an instance of `Adornable::Context`, which has some useful information about the decorated method being called
 
-- `Adornable::Context#method_receiver`: the actual object that the [decorated] method is being called on (an object/class; e.g., `Foo` or an instance of `Foo`)
-- `Adornable::Context#method_name`: the name of the [decorated] method being called on `method_receiver` (a symbol; e.g., `:some_method` or `:other_method`)
-- `Adornable::Context#method_arguments`: an array of arguments passed to the [decorated] method, including keyword arguments as a final hash (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true)` then `arguments` would be `[123, {:bar=>true}]`)
+- `Adornable::Context#method_name`: the name of the decorated method being called (a symbol; e.g., `:some_method` or `:other_method`)
+- `Adornable::Context#method_receiver`: the actual object that the decorated method (the `#method_name`) belongs to/is being called on (an object/class; e.g., the class `Foo` if it's a decorated class method, or an instance of `Foo` if it's a decorated instance method)
+- `Adornable::Context#method_arguments`: an array of arguments passed to the decorated method, including keyword arguments as a final hash (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true)` then `arguments` would be `[123, {:bar=>true}]`)
+
+##### Custom keyword arguments (optional)
 
 The **optional keyword arguments** are any parameters you want to be able to pass to the decorator method when decorating a method with `::decorate`:
 
-- If you define a decorator like `def self.some_decorator(context)` then it takes no options when it is used: `decorate :some_decorator`
-- If you define a decorator like `def self.some_decorator(context, some_option:)` then it takes one _required_ keyword argument when it is used: `decorate :some_decorator, some_option: 123` (`::some_decorator`, will receive `123` every time the method it's decorating is called)
-- Similarly, if you define a decorator like `def self.some_decorator(context, some_option: 456)`, then it takes one _optional_ keyword argument when it is used: `decorate :some_decorator` is valid (and implies `some_option: 456` since it has a default), and `decorate :some_decorator, some_option: 789` is valid as well
+- If you define a decorator like `def self.some_decorator(context)` then it takes no options when it is used: `decorate :some_decorator`.
+- If you define a decorator like `def self.some_decorator(context, some_option:)` then it takes one _required_ keyword argument when it is used: `decorate :some_decorator, some_option: 123` (so that `::some_decorator` will receive `123` as the `some_option` parameter every time the decorated method is called). You can customize functionality of the decorator this way.
+- Similarly, if you define a decorator like `def self.some_decorator(context, some_option: 456)`, then it takes one _optional_ keyword argument when it is used: `decorate :some_decorator` is valid (and implies `some_option: 456` since it has a default), and `decorate :some_decorator, some_option: 789` is valid as well.
 
-> **Note:** Every decorator method should _probably_ `yield` at some point in the method body. I say _"should"_ because, technically, you don't have to, but if you don't then the original method will never be called. That's a valid use-case, but 99% of the time you're gonna want to `yield`.
+##### Yielding to the next decorator/decorated method
+
+Every decorator method **should also probably `yield`** at some point in the method body. I say _"should"_ because, technically, you don't have to, but if you don't then the original method will never be called. That's a valid use-case, but 99% of the time you're gonna want to `yield`.
 
 > **Note:** the return value of your decorator **will replace the return value of the decorated method,** so _also_ you should probably return whatever value `yield` returned. Again, it is a valid use case to return something _else,_ but 99% of the time you probably want to return the value returned by the wrapped method.
 >
@@ -295,13 +281,12 @@ The **optional keyword arguments** are any parameters you want to be able to pas
 > #=> 123
 > ```
 
-#### Using custom decorators implicitly
+#### Writing custom decorators and using them _implicitly_
 
 You can also register decorator receivers so that you don't have to reference them with the `from:` option:
 
 ```rb
 class FooDecorators
-  # Note: this is a class method
   def self.blast_it(context)
     puts "Blasting it!"
     value = yield
@@ -310,8 +295,7 @@ class FooDecorators
 end
 
 class MoreFooDecorators
-  # Note: this is a class method
-  def self.wait_for_it(context, dot_count: 3)
+  def wait_for_it(context, dot_count: 3)
     ellipsis = dot_count.times.map { '.' }.join
     puts "Waiting for it#{ellipsis}"
     value = yield
@@ -323,7 +307,7 @@ class Foo
   extend Adornable
 
   add_decorators_from FooDecorators
-  add_decorators_from MoreFooDecorators
+  add_decorators_from MoreFooDecorators.new
 
   decorate :blast_it
   decorate :wait_for_it, dot_count: 9
@@ -339,6 +323,8 @@ foo.some_method
 # Waiting for it.........
 #=> "haha I'm a method!........."
 ```
+
+> **Note:** All the rest of the stuff from the previous section (using decorators explicitly) also applies here (using decorators implicitly).
 
 > **Note:** In the case of duplicate decorator methods, later receivers registered with `::add_decorators_from` will override any decorators by the same name from earlier registered receivers.
 
