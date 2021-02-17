@@ -18,17 +18,15 @@ module Adornable
       yield
     end
 
-    def self.memoize(context, for_arguments: false, &block)
-      if for_arguments
-        memoize_for_arguments(context, &block)
-      else
-        method_receiver = context.method_receiver
-        method_name = context.method_name
-        memo_var_name = :"@adornable_memoized_#{method_receiver.object_id}_#{method_name}"
-        existing = instance_variable_get(memo_var_name)
-        value = existing.nil? ? yield : existing
-        instance_variable_set(memo_var_name, value)
-      end
+    def self.memoize(context, for_any_arguments: false, &block)
+      return memoize_for_arguments(context, &block) unless for_any_arguments
+
+      method_receiver = context.method_receiver
+      method_name = context.method_name
+      memo_var_name = :"@adornable_memoized_#{method_receiver.object_id}_#{method_name}"
+      existing = instance_variable_get(memo_var_name)
+      value = existing.nil? ? yield : existing
+      instance_variable_set(memo_var_name, value)
     end
 
     def self.memoize_for_arguments(context)

@@ -231,25 +231,25 @@ class Foobar
 
   ###
 
-  decorate :memoize
-  def memoized_instance_method(foo, bar:)
+  decorate :memoize, for_any_arguments: true
+  def memoized_instance_method_for_any_args_as_option(foo, bar:)
     rand
   end
 
-  decorate :memoize
-  def self.memoized_class_method(foo, bar:)
+  decorate :memoize, for_any_arguments: true
+  def self.memoized_class_method_for_any_args_as_option(foo, bar:)
     rand
   end
 
   ###
 
-  decorate :memoize, for_arguments: true
-  def memoized_instance_method_for_args_as_option(foo, bar:)
+  decorate :memoize
+  def memoized_instance_method_for_args_as_default_option(foo, bar:)
     rand
   end
 
-  decorate :memoize, for_arguments: true
-  def self.memoized_class_method_for_args_as_option(foo, bar:)
+  decorate :memoize
+  def self.memoized_class_method_for_args_as_default_option(foo, bar:)
     rand
   end
 
@@ -631,13 +631,13 @@ RSpec.describe Adornable do
       end
     end
 
-    describe "decorate :memoize" do
+    describe "decorate :memoize, for_any_arguments: true" do
       context "when decorating instance methods" do
         it "returns the cached value after being called" do
           foobar = Foobar.new
-          value1 = foobar.memoized_instance_method(123, bar: 456)
-          value2 = foobar.memoized_instance_method(123, bar: 456)
-          value3 = foobar.memoized_instance_method("whoa", bar: [1, 2, 3])
+          value1 = foobar.memoized_instance_method_for_any_args_as_option(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_any_args_as_option(123, bar: 456)
+          value3 = foobar.memoized_instance_method_for_any_args_as_option("whoa", bar: [1, 2, 3])
           expect(value1).to eq(value2)
           expect(value2).to eq(value3)
         end
@@ -645,102 +645,102 @@ RSpec.describe Adornable do
 
       context "when decorating class methods" do
         it "returns the cached value after being called" do
-          value1 = Foobar.memoized_class_method(123, bar: 456)
-          value2 = Foobar.memoized_class_method(123, bar: 456)
-          value3 = Foobar.memoized_class_method("whoa", bar: [1, 2, 3])
+          value1 = Foobar.memoized_class_method_for_any_args_as_option(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_any_args_as_option(123, bar: 456)
+          value3 = Foobar.memoized_class_method_for_any_args_as_option("whoa", bar: [1, 2, 3])
           expect(value1).to eq(value2)
           expect(value2).to eq(value3)
         end
       end
     end
 
-    describe "decorate :memoize, for_arguments: true" do
+    describe "decorate :memoize, for_any_arguments: false (default)" do
       context "when decorating instance methods" do
         it "returns the cached value when given the same simple arguments" do
           foobar = Foobar.new
-          value1 = foobar.memoized_instance_method_for_args_as_option(123, bar: 456)
-          value2 = foobar.memoized_instance_method_for_args_as_option(123, bar: 456)
+          value1 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 456)
           expect(value1).to eq(value2)
         end
 
         it "returns the cached value when given the same complex arguments" do
           foobar = Foobar.new
-          value1 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value1 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
           expect(value1).to eq(value2)
         end
 
         it "returns a new value when given different simple arguments" do
           foobar = Foobar.new
 
-          value1 = foobar.memoized_instance_method_for_args_as_option(123, bar: 456)
-          value2 = foobar.memoized_instance_method_for_args_as_option(123, bar: 456)
+          value1 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 456)
           expect(value1).to eq(value2)
 
-          value1 = foobar.memoized_instance_method_for_args_as_option(123, bar: 456)
-          value2 = foobar.memoized_instance_method_for_args_as_option(456, bar: 456)
+          value1 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args_as_default_option(456, bar: 456)
           expect(value1).not_to eq(value2)
 
-          value1 = foobar.memoized_instance_method_for_args_as_option(123, bar: 456)
-          value2 = foobar.memoized_instance_method_for_args_as_option(123, bar: 123)
+          value1 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 456)
+          value2 = foobar.memoized_instance_method_for_args_as_default_option(123, bar: 123)
           expect(value1).not_to eq(value2)
         end
 
         it "returns a new value when given different complex arguments" do
           foobar = Foobar.new
 
-          value1 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value1 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
           expect(value1).to eq(value2)
 
-          value1 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = foobar.memoized_instance_method_for_args_as_option("[1, 2, 3]", bar: { baz: true, bam: [:hi, "there"] })
+          value1 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args_as_default_option("[1, 2, 3]", bar: { baz: true, bam: [:hi, "there"] })
           expect(value1).not_to eq(value2)
 
-          value1 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = foobar.memoized_instance_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
+          value1 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
           expect(value1).not_to eq(value2)
         end
       end
 
       context "when decorating class methods" do
         it "returns the cached value when given the same simple arguments" do
-          value1 = Foobar.memoized_class_method_for_args_as_option(123, bar: 456)
-          value2 = Foobar.memoized_class_method_for_args_as_option(123, bar: 456)
+          value1 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 456)
           expect(value1).to eq(value2)
         end
 
         it "returns the cached value when given the same complex arguments" do
-          value1 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value1 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
           expect(value1).to eq(value2)
         end
 
         it "returns a new value when given different simple arguments" do
-          value1 = Foobar.memoized_class_method_for_args_as_option(123, bar: 456)
-          value2 = Foobar.memoized_class_method_for_args_as_option(123, bar: 456)
+          value1 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 456)
           expect(value1).to eq(value2)
 
-          value1 = Foobar.memoized_class_method_for_args_as_option(123, bar: 456)
-          value2 = Foobar.memoized_class_method_for_args_as_option(456, bar: 456)
+          value1 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args_as_default_option(456, bar: 456)
           expect(value1).not_to eq(value2)
 
-          value1 = Foobar.memoized_class_method_for_args_as_option(123, bar: 456)
-          value2 = Foobar.memoized_class_method_for_args_as_option(123, bar: 123)
+          value1 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 456)
+          value2 = Foobar.memoized_class_method_for_args_as_default_option(123, bar: 123)
           expect(value1).not_to eq(value2)
         end
 
         it "returns a new value when given different complex arguments" do
-          value1 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value1 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
           expect(value1).to eq(value2)
 
-          value1 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = Foobar.memoized_class_method_for_args_as_option("[1, 2, 3]", bar: { baz: true, bam: [:hi, "there"] })
+          value1 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args_as_default_option("[1, 2, 3]", bar: { baz: true, bam: [:hi, "there"] })
           expect(value1).not_to eq(value2)
 
-          value1 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
-          value2 = Foobar.memoized_class_method_for_args_as_option([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
+          value1 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
+          value2 = Foobar.memoized_class_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
           expect(value1).not_to eq(value2)
         end
       end
