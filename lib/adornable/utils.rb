@@ -14,6 +14,15 @@ module Adornable
       def presence(value)
         value if present?(value)
       end
+
+      def formal_method_name(method_receiver, method_name)
+        receiver_name, name_delimiter = if method_receiver.is_a?(Class)
+          [method_receiver.to_s, '::']
+        else
+          [method_receiver.class.to_s, '#']
+        end
+        "`#{receiver_name}#{name_delimiter}#{method_name}`"
+      end
     end
   end
 end

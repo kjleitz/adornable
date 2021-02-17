@@ -90,7 +90,7 @@ class RandomValueGenerator
   end
 
   decorate :log
-  decorate :memoize_for_arguments
+  decorate :memoize
   def values(max)
     (1..max).map { rand }
   end
@@ -149,35 +149,37 @@ class Foo
 
   decorate :log
   def some_method
-    # ...
+    # the method name (Foo#some_method) and arguments will be logged
   end
 
   decorate :memoize
   def some_other_method
-    # ...
+    # the return value will be cached
   end
 
-  decorate :memoize_for_arguments
+  decorate :memoize
   def yet_another_method(some_arg, some_other_arg = true, key_word_arg:, key_word_arg_with_default: 123)
-    # ...
+    # the return value will be cached based on the arguments the method receives
   end
 
   decorate :log
-  decorate :memoize_for_arguments
+  decorate :memoize, for_any_arguments: true
   def oh_boy_another_method(some_arg, some_other_arg = true, key_word_arg:, key_word_arg_with_default: 123)
-    # ...
+    # the method name (Foo#oh_boy_another_method) and arguments will be logged
+    # the return value will be cached regardless of the arguments received
   end
 
   decorate :log
   def self.yeah_it_works_on_class_methods_too
-    # ...
+    # the method name (Foo::yeah_it_works_on_class_methods_too) and arguments
+    # will be logged
   end
 end
 ```
 
 - `decorate :log` logs the method name and any passed arguments to the console
-- `decorate :memoize` caches the result of the first call and returns that initial result (and does not execute the method again) for any additional calls
-- `decorate :memoize_for_arguments` acts like `decorate :memoize` but it namespaces that cache by the arguments passed, so it will re-compute (and cache the result) only if the arguments change... if the arguments are the same as any previous time the method was called, it will return the cached result instead
+- `decorate :memoize` caches the result of the first call and returns that initial result (and does not execute the method again) for any additional calls. By default, it namespaces the cache by the arguments passed to the method, so it will re-compute  only if the arguments change; if the arguments are the same as any previous time the method was called, it will return the cached result instead.
+  - pass the `for_any_arguments: true` option (e.g., `decorate :memoize, for_any_arguments: true`) to ignore the arguments in the caching process and simply memoize the result no matter what
 
 > **Note:** in the case of multiple decorators decorating a method, each is executed from top to bottom.
 
@@ -188,17 +190,18 @@ You can reference any decorator method you write, like so:
 ```rb
 class FooDecorators
   # Note: this is a class method
-  def self.blast_it(method_receiver, method_name, arguments)
+  def self.blast_it(context)
     puts "Blasting it!"
     value = yield
     "#{value}!"
   end
 
   # Note: this is an instance method
-  def wait_for_it(method_receiver, method_name, arguments)
-    puts "Waiting..."
+  def self.wait_for_it(context, dot_count: 3)
+    ellipsis = dot_count.times.map { '.' }.join
+    puts "Waiting for it#{ellipsis}"
     value = yield
-    "#{value}..."
+    "#{value}#{ellipsis}"
   end
 end
 
@@ -240,49 +243,57 @@ foo.yet_another_method(123, bloop: "bleep")
 
 Use the `from:` option to specify what should receive the decorator method. Keep in mind that the decorator method will be called on the thing specified by `from:`... so, if you provide a class, it better be a class method, and if you supply an instance, it better be an instance method.
 
-Every decorator method must take the following arguments:
+Every custom decorator method that you define must take one required argument (`context`) and any number of keyword arguments.
 
-- `method_receiver`: the actual object that the [decorated] method is being called on (an object/class); e.g., `Foo` or an instance of `Foo`
-- `method_name`: the name of the [decorated] method being called on `method_receiver` (a symbol); e.g., `:some_method` or `:other_method`
-- `arguments`: an array of arguments passed to the [decorated] method, including keyword arguments; e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true)` then `arguments` would be `[123, {:bar=>true}]`
+The **required argument** is an instance of `Adornable::Context`, which has some useful information about the decorated method being called
 
-> **Note:** Every decorator method _should_ also probably `yield` at some point in the method body. I say _"should"_ because, technically, you don't have to, but if you don't then the original method will never be called. That's a valid use-case, but 99% of the time you're gonna want to `yield`.
->
+- `Adornable::Context#method_receiver`: the actual object that the [decorated] method is being called on (an object/class; e.g., `Foo` or an instance of `Foo`)
+- `Adornable::Context#method_name`: the name of the [decorated] method being called on `method_receiver` (a symbol; e.g., `:some_method` or `:other_method`)
+- `Adornable::Context#method_arguments`: an array of arguments passed to the [decorated] method, including keyword arguments as a final hash (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true)` then `arguments` would be `[123, {:bar=>true}]`)
+
+The **optional keyword arguments** are any parameters you want to be able to pass to the decorator method when decorating a method with `::decorate`:
+
+- If you define a decorator like `def self.some_decorator(context)` then it takes no options when it is used: `decorate :some_decorator`
+- If you define a decorator like `def self.some_decorator(context, some_option:)` then it takes one _required_ keyword argument when it is used: `decorate :some_decorator, some_option: 123` (`::some_decorator`, will receive `123` every time the method it's decorating is called)
+- Similarly, if you define a decorator like `def self.some_decorator(context, some_option: 456)`, then it takes one _optional_ keyword argument when it is used: `decorate :some_decorator` is valid (and implies `some_option: 456` since it has a default), and `decorate :some_decorator, some_option: 789` is valid as well
+
+> **Note:** Every decorator method should _probably_ `yield` at some point in the method body. I say _"should"_ because, technically, you don't have to, but if you don't then the original method will never be called. That's a valid use-case, but 99% of the time you're gonna want to `yield`.
+
 > **Note:** the return value of your decorator **will replace the return value of the decorated method,** so _also_ you should probably return whatever value `yield` returned. Again, it is a valid use case to return something _else,_ but 99% of the time you probably want to return the value returned by the wrapped method.
-
-Contrived example of when you might want to muck around with the return value:
-
-```rb
-class FooDecorators
-  def self.coerce_to_int(method_receiver, method_name, arguments)
-    value = yield
-    new_value = value.strip.to_i
-    puts "New value: #{value.inspect} (class: #{value.class})"
-    new_value
-  end
-end
-
-class Foo
-  extend Adornable
-
-  decorate :coerce_to_int, from: FooDecorators
-  def get_number_from_user
-    print "Enter a number: "
-    value = gets
-    puts "Value: #{value.inspect} (class: #{value.class})"
-    value
-  end
-end
-
-foo = Foo.new
-
-foo.get_number_from_user
-# Enter a number
-# > 123
-# Value: "123" (class: String)
-# New value: 123 (class: Integer)
-#=> 123
-```
+>
+> A contrived example of when you might want to muck around with the return value:
+>
+> ```rb
+> class FooDecorators
+>   def self.coerce_to_int(context)
+>     value = yield
+>     new_value = value.strip.to_i
+>     puts "New value: #{value.inspect} (class: #{value.class})"
+>     new_value
+>   end
+> end
+>
+> class Foo
+>   extend Adornable
+>
+>   decorate :coerce_to_int, from: FooDecorators
+>   def get_number_from_user
+>     print "Enter a number: "
+>     value = gets
+>     puts "Value: #{value.inspect} (class: #{value.class})"
+>     value
+>   end
+> end
+>
+> foo = Foo.new
+>
+> foo.get_number_from_user
+> # Enter a number
+> # > 123
+> # Value: "123" (class: String)
+> # New value: 123 (class: Integer)
+> #=> 123
+> ```
 
 #### Using custom decorators implicitly
 
@@ -291,7 +302,7 @@ You can also register decorator receivers so that you don't have to reference th
 ```rb
 class FooDecorators
   # Note: this is a class method
-  def self.blast_it(method_receiver, method_name, arguments)
+  def self.blast_it(context)
     puts "Blasting it!"
     value = yield
     "#{value}!"
@@ -300,10 +311,11 @@ end
 
 class MoreFooDecorators
   # Note: this is a class method
-  def self.wait_for_it(method_receiver, method_name, arguments)
-    puts "Waiting for it..."
+  def self.wait_for_it(context, dot_count: 3)
+    ellipsis = dot_count.times.map { '.' }.join
+    puts "Waiting for it#{ellipsis}"
     value = yield
-    "#{value}..."
+    "#{value}#{ellipsis}"
   end
 end
 
@@ -314,7 +326,7 @@ class Foo
   add_decorators_from MoreFooDecorators
 
   decorate :blast_it
-  decorate :wait_for_it
+  decorate :wait_for_it, dot_count: 9
   def some_method
     "haha I'm a method"
   end
@@ -324,12 +336,12 @@ foo = Foo.new
 
 foo.some_method
 # Blasting it!
-# Waiting for it...
-#=> "haha I'm a method!..."
+# Waiting for it.........
+#=> "haha I'm a method!........."
 ```
 
-> **Note:** In the case of duplicate decorator methods, later receivers registered with `::add_decorators_from` will override any duplicate decorators from earlier registered receivers.
->
+> **Note:** In the case of duplicate decorator methods, later receivers registered with `::add_decorators_from` will override any decorators by the same name from earlier registered receivers.
+
 > **Note:** in the case of multiple decorators decorating a method, each is executed from top to bottom; i.e., the top wraps the next, which wraps the next, and so on, until the method itself is wrapped.
 
 ## Development
@@ -349,7 +361,7 @@ rake spec
 ### Run the linter
 
 ```bash
-bundle exec rubocop
+rubocop
 ```
 
 ### Create release

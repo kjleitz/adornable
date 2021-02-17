@@ -2,6 +2,7 @@
 
 require 'adornable/utils'
 require 'adornable/error'
+require 'adornable/context'
 
 module Adornable
   class Machinery # :nodoc:
@@ -9,12 +10,17 @@ module Adornable
       registered_decorator_receivers.unshift(receiver)
     end
 
-    def accumulate_decorator!(name:, receiver:, defer_validation:)
+    def accumulate_decorator!(name:, receiver:, defer_validation:, decorator_options:)
       name = name.to_sym
       receiver ||= find_suitable_receiver_for(name)
       validate_decorator!(name, receiver) unless defer_validation
 
-      decorator = { name: name, receiver: receiver }
+      decorator = {
+        name: name,
+        receiver: receiver,
+        options: decorator_options || {},
+      }
+
       accumulated_decorators << decorator
     end
 
@@ -82,15 +88,31 @@ module Adornable
       @class_method_decorators[name] = decorators || []
     end
 
-    def run_decorators(decorators, bound_method, *args)
-      return bound_method.call(*args) if Adornable::Utils.blank?(decorators)
+    def run_decorators(decorators, bound_method, *method_arguments)
+      return bound_method.call(*method_arguments) if Adornable::Utils.blank?(decorators)
 
       decorator, *remaining_decorators = decorators
-      name = decorator[:name]
-      receiver = decorator[:receiver]
-      validate_decorator!(name, receiver, bound_method)
-      receiver.send(name, bound_method.receiver, bound_method.name, args) do
-        run_decorators(remaining_decorators, bound_method, *args)
+      decorator_name = decorator[:name]
+      decorator_receiver = decorator[:receiver]
+      decorator_options = decorator[:options]
+      validate_decorator!(decorator_name, decorator_receiver, bound_method)
+
+      context = Adornable::Context.new(
+        method_receiver: bound_method.receiver,
+        method_name: bound_method.name,
+        method_arguments: method_arguments,
+        decorator_name: decorator_name,
+        decorator_options: decorator_options,
+      )
+
+      send_parameters = if Adornable::Utils.present?(decorator_options)
+        [decorator_name, context, decorator_options]
+      else
+        [decorator_name, context]
+      end
+
+      decorator_receiver.send(*send_parameters) do
+        run_decorators(remaining_decorators, bound_method, *method_arguments)
       end
     end
 
@@ -100,15 +122,13 @@ module Adornable
       end
     end
 
-    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Layout/LineLength
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Layout/LineLength
     def validate_decorator!(decorator_name, decorator_receiver, bound_method = nil)
       return if decorator_receiver.respond_to?(decorator_name)
 
       location_hint = if bound_method
         method_receiver = bound_method.receiver
-
         method_full_name = method_receiver.is_a?(Class) ? "#{method_receiver}::#{method.name}" : "#{method_receiver.class}##{method.name}"
-
         method_location = bound_method.source_location
         "Cannot decorate `#{method_full_name}` (defined at `#{method_location.first}:#{method_location.second})."
       end
@@ -126,6 +146,6 @@ module Adornable
       message = [location_hint, base_message, definition_hint].compact.join(" ")
       raise Adornable::Error::InvalidDecoratorArguments, message
     end
-    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity, Layout/LineLength
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Layout/LineLength
   end
 end
