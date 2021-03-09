@@ -20,6 +20,14 @@ class FoobarImplicitDecorators
     value = yield
     "#{value}...!"
   end
+
+  def self.ignore_errors(context, and_return:)
+    begin
+      yield
+    rescue
+      and_return
+    end
+  end
 end
 # rubocop:enable Lint/UnusedMethodArgument
 
@@ -263,6 +271,38 @@ class Foobar
   decorate :memoize_for_arguments
   def self.memoized_class_method_for_args(foo, bar:)
     rand
+  end
+
+  ###
+
+  decorate :ignore_errors, and_return: nil
+  def ignored_error_and_returned_nil_for_instance_method
+    raise StandardError, "Woooop"
+  end
+
+  decorate :ignore_errors, and_return: nil
+  def no_error_and_returned_int_for_instance_method
+    123
+  end
+
+  decorate :ignore_errors, and_return: false
+  def ignored_error_and_returned_false_for_instance_method
+    raise ArgumentError, "pooooW"
+  end
+
+  decorate :ignore_errors, and_return: nil
+  def self.ignored_error_and_returned_nil_for_class_method
+    raise StandardError, "Woooop"
+  end
+
+  decorate :ignore_errors, and_return: nil
+  def self.no_error_and_returned_int_for_class_method
+    123
+  end
+
+  decorate :ignore_errors, and_return: false
+  def self.ignored_error_and_returned_false_for_class_method
+    raise ArgumentError, "pooooW"
   end
 end
 # rubocop:enable Lint/UnusedMethodArgument
@@ -834,6 +874,47 @@ RSpec.describe Adornable do
           value1 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
           value2 = Foobar.memoized_class_method_for_args([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
           expect(value1).not_to eq(value2)
+        end
+      end
+    end
+  end
+
+  context "when handling errors" do
+    describe "decorate :ignore_errors, and_return: ..." do
+      context "when decorating instance methods" do
+        it "ignores errors and returns nil when nil is specified as the default return" do
+          foobar = Foobar.new
+          value = foobar.ignored_error_and_returned_nil_for_instance_method
+          expect(value).to be_nil
+        end
+
+        it "doesn't do anything if there's no error to handle" do
+          foobar = Foobar.new
+          value = foobar.no_error_and_returned_int_for_instance_method
+          expect(value).to be_an(Integer)
+        end
+
+        it "ignores errors and returns false when false is specified as the default return" do
+          foobar = Foobar.new
+          value = foobar.ignored_error_and_returned_false_for_instance_method
+          expect(value).to be(false)
+        end
+      end
+
+      context "when decorating class methods" do
+        it "ignores errors and returns nil when nil is specified as the default return" do
+          value = Foobar.ignored_error_and_returned_nil_for_class_method
+          expect(value).to be_nil
+        end
+
+        it "doesn't do anything if there's no error to handle" do
+          value = Foobar.no_error_and_returned_int_for_class_method
+          expect(value).to be_an(Integer)
+        end
+
+        it "ignores errors and returns false when false is specified as the default return" do
+          value = Foobar.ignored_error_and_returned_false_for_class_method
+          expect(value).to be(false)
         end
       end
     end

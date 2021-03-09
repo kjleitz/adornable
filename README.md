@@ -26,6 +26,181 @@ Alternatively, install it globally:
 gem install adornable
 ```
 
+## tl;dr
+
+See the [next section](#usage) for a more in-depth usage description. For now, though, let's see some quick examples!
+
+```rb
+# lib/notification.rb
+
+# Captain Obvious: these `require`/`require_relative` statements aren't
+# necessary if your project is using an auto-loader (e.g., if it's a Rails app)
+require "adornable"
+require_relative "decorators/my_explicit_decorators"
+require_relative "decorators/my_implicit_decorators"
+
+class Notification
+  extend Adornable # extend the `Adornable` class to get the `::decorate` macro
+                   # and built-in decorators like `:log` and `:memoize`
+
+  add_decorators_from MyImplicitDecorators # Use `::add_decorators_from` to
+                                           # register custom decorators for use
+                                           # as if they were built-ins
+  def initialize(receiver_id, sender_id)
+    @receiver_id = receiver_id
+    @sender_id = sender_id
+  end
+
+  decorate :log                 # The `:log` decorator is a simple built-in
+  def send_email(subject, body) # decorator that logs the method name (and any
+    # ...                       # arguments it was given) each time the method
+  end                           # is called
+
+  decorate :log
+  def send_sms(body)
+    # ...
+  end
+
+  decorate :log
+  def send_push(title, body, alert: false)
+    # ...
+  end
+
+  decorate :coerce_to_int, from: MyExplicitDecorators # Use the `:from` keyword
+  def receiver_id                                     # to tell Adornable where
+    @receiver_id                                      # to find a custom
+  end                                                 # decorator if it's not
+                                                      # registered with the
+  decorate :coerce_to_int, from: MyExplicitDecorators # `add_decorators_from`
+  def sender_id                                       # macro
+    @sender_id
+  end
+
+  decorate :memoize        # The `:memoize` decorator is a simple built-in
+  def receiver             # decorator that caches the result of the method and
+    User.find(receiver_id) # returns that cached value every subsequent call,
+  end                      # as oppoosed to re-executing the method
+
+  decorate :ignore_errors, and_return: nil # The `:ignore_errors` decorator is a
+  def sender                               # custom decorator defined in the
+    User.find(sender_id)                   # example `MyImplicitDecorators`
+  end                                      # class below
+
+  decorate :validate_arguments, shaped_like: [ # This is also a custom decorator
+    /\Aemail|push|sms\z/,                      # defined in that example class
+    { sender_id: Integer, receiver_id: Integer, immediate: [TrueClass, FalseClass] }
+  ]
+  def unsend_notification(notification_type, options)
+    sender_id = options[:sender_id]
+    receiver_id = options[:receiver_id]
+    immediate = options[:immediate]
+    # ...
+  end
+end
+```
+
+```rb
+# lib/decorators/my_explicit_decorators.rb
+
+class MyExplicitDecorators
+  # Take the return value of the decorated method and coerces it to an integer
+  #
+  # Note: The `_context` argument has more information about the method being
+  #       called, like the method name, receiver, and given arguments, but we
+  #       don't need it for the functionality of this decorator
+  def self.coerce_to_int(_context)
+    method_return_value = yield # The decorator should `yield` in order to call
+    method_return_value.to_i    # the original method (or, if the method is
+  end                           # decorated multiple times, the next decorator 
+end                             # in the sequence will be called here, and so on
+                                # until the original decorated method is called)
+```
+
+```rb
+# lib/decorators/my_implicit_decorators.rb
+
+class MyImplicitDecorators
+  # Rescues from potential errors in the decorated method and returns the value
+  # specified by the `and_return:` keyword argument
+  def self.ignore_errors(_context, and_return:) # You can specify keyword
+    begin                                       # arguments to the decorator
+      yield                                     # like this so that you can
+    rescue                                      # modify functionality when
+      and_return                                # decorating methods
+    end
+  end
+
+  # Validates the arguments given to the decorated method, to ensure that they
+  # match the "shape" specified by the `shaped_like:` keyword argument. For
+  # example, if the shape is defined like so:
+  #
+  #   decorate :validate_arguments, shaped_like: [
+  #     Integer,
+  #     [Symbol, String],
+  #     { a: Hash, b: [TrueClass, FalseClass], c: { cc: String } }
+  #   ]
+  #   def some_method(foo, bar, **options)
+  #     # ...
+  #   end
+  #
+  # ...then these uses would pass validation and silently continue:
+  #
+  #   some_method(123, :hello, a: {}, b: false, c: { cc: "Hi" })
+  #   some_method(0, "hello", a: { cool: "yeah" }, b: true, c: { cc: "", zz: 1 })
+  #
+  # ...but these uses would fail validation and throw an error:
+  #
+  #   some_method("123", [:hello], a: [], b: "false", c: {})
+  #   some_method(nil, 321, a: OpenStruct.new, b: nil, c: { cc: :hi })
+  #
+  # Note: The `context` argument has more information about the method being
+  #       called, like the method name, receiver, and given arguments. We'll use
+  #       it to compare each of the arguments passed to the decorated method and
+  #       ensure it matches its respective shape.
+  def self.validate_arguments(context, shaped_like:)
+    # Checks that an argument value (e.g., 123) matches a shape value (e.g.,
+    # Integer). Throws an error if it doesn't match the shape. Use arrays to
+    # match any of the supplied shape values (e.g., both `123` and `"123"` would
+    # be matched by `[Integer, String]`). Use a hash to match the shape of a
+    # hash or final keyword arguments (e.g., `{ a: 123, b: { bb: true } }` would
+    # match `{ a: Integer, b: { bb: [TrueClass, FalseClass] } }`)
+    validate_shape = lambda do |argument, shape|
+      case shape
+      when Regexp
+        unless argument.to_s.match(shape)
+          raise ArgumentError, "Given argument #{argument.inspect} must match #{shape.inspect}"
+        end
+      when Class
+        unless argument.is_a?(shape)
+          raise ArgumentError, "Given argument #{argument.inspect} must be a #{shape.inspect}"
+        end
+      when Array
+        unless shape.any? { |shape_value| validate_shape.call(argument, shape_value) }
+          raise ArgumentError, "Given argument #{argument.inspect} must be one of #{shape.inspect}"
+        end
+      when Hash
+        shape.each do |key, shape_value|
+          hash_value = argument[key]
+          unless validate_shape.call(hash_value, shape_value)
+            raise ArgumentError, "Given value (#{hash_value.inspect}) for hash key #{key.inspect} must be shaped like #{shape_value.inspect}"
+          end
+        end
+      end
+    end
+
+    # Notice we're grabbing the method arguments off of the `context` object
+    # here so we can compare each one with the specified shape
+    context.method_arguments.each_with_index do |argument, index|
+      shape = shaped_like[index]
+      validate_shape.call(argument, shape)
+    end
+
+    # Finally we'll yield to the original method if no errors were raised
+    yield
+  end
+end
+```
+
 ## Usage
 
 ### The basics
