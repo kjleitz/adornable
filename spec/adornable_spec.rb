@@ -257,7 +257,7 @@ class Foobar
   decorate :memoize, for_any_arguments: true
   def memoized_instance_method_for_any_args_with_nil_return(counter)
     counter.value += 1
-    rand
+    nil
   end
 
   decorate :memoize
