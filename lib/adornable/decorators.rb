@@ -24,9 +24,12 @@ module Adornable
       method_receiver = context.method_receiver
       method_name = context.method_name
       memo_var_name = :"@adornable_memoized_#{method_receiver.object_id}_#{method_name}"
-      existing = instance_variable_get(memo_var_name)
-      value = existing.nil? ? yield : existing
-      instance_variable_set(memo_var_name, value)
+
+      if instance_variable_defined?(memo_var_name)
+        instance_variable_get(memo_var_name)
+      else
+        instance_variable_set(memo_var_name, yield)
+      end
     end
 
     def self.memoize_for_arguments(context)
@@ -37,7 +40,7 @@ module Adornable
       memo = instance_variable_get(memo_var_name) || {}
       instance_variable_set(memo_var_name, memo)
       args_key = method_args.inspect
-      memo[args_key] = yield if memo[args_key].nil?
+      memo[args_key] = yield unless memo.key?(args_key)
       memo[args_key]
     end
   end
