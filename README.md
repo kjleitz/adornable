@@ -156,6 +156,7 @@ end
 - `decorate :log` logs the method name and any passed arguments to the console
 - `decorate :memoize` caches the result of the first call and returns that initial result (and does not execute the method again) for any additional calls. By default, it namespaces the cache by the arguments passed to the method, so it will re-compute  only if the arguments change; if the arguments are the same as any previous time the method was called, it will return the cached result instead.
   - pass the `for_any_arguments: true` option (e.g., `decorate :memoize, for_any_arguments: true`) to ignore the arguments in the caching process and simply memoize the result no matter what
+  - a `nil` value returned from a memoized method will still be cached like any other value
 
 > **Note:** in the case of multiple decorators decorating a method, each is executed from top to bottom.
 

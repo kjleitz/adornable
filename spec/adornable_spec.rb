@@ -716,7 +716,7 @@ RSpec.describe Adornable do
 
         it "computes the value only once for args if the return value is nil" do
           foobar = Foobar.new
-          counter = Struct.new(:value, :inspect).new(0, "struct")
+          counter = Struct.new(:value, :inspect).new(0, "struct") # rubocop:disable Lint/StructNewOverride
 
           foobar.memoized_instance_method_for_args_with_nil_return(counter)
           foobar.memoized_instance_method_for_args_with_nil_return(counter)
