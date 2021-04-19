@@ -351,12 +351,6 @@ rake spec
 rubocop
 ```
 
-### Create release
-
-```
-rake release
-```
-
 ## Contributing
 
 Bug reports and pull requests for this project are welcome at its [GitHub page](https://github.com/kjleitz/adornable). If you choose to contribute, please be nice so I don't have to run out of bubblegum, etc.
