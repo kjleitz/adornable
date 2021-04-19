@@ -249,6 +249,18 @@ class Foobar
   end
 
   decorate :memoize
+  def memoized_instance_method_for_args_with_nil_return(counter)
+    counter.value += 1
+    nil
+  end
+
+  decorate :memoize, for_any_arguments: true
+  def memoized_instance_method_for_any_args_with_nil_return(counter)
+    counter.value += 1
+    nil
+  end
+
+  decorate :memoize
   def self.memoized_class_method_for_args_as_default_option(foo, bar:)
     rand
   end
@@ -700,6 +712,24 @@ RSpec.describe Adornable do
           value1 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: [:hi, "there"] })
           value2 = foobar.memoized_instance_method_for_args_as_default_option([1, 2, 3], bar: { baz: true, bam: %w[hi there] })
           expect(value1).not_to eq(value2)
+        end
+
+        it "computes the value only once for args if the return value is nil" do
+          foobar = Foobar.new
+          counter = Struct.new(:value, :inspect).new(0, "struct")
+
+          foobar.memoized_instance_method_for_args_with_nil_return(counter)
+          foobar.memoized_instance_method_for_args_with_nil_return(counter)
+          expect(counter.value).to eq 1
+        end
+
+        it "computes the value only once for any args if the return value is nil" do
+          foobar = Foobar.new
+          counter = Struct.new(:value).new(0)
+
+          foobar.memoized_instance_method_for_any_args_with_nil_return(counter)
+          foobar.memoized_instance_method_for_any_args_with_nil_return(counter)
+          expect(counter.value).to eq 1
         end
       end
 
