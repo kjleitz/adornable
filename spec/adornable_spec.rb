@@ -54,7 +54,7 @@ class Foobar
   end
 
   decorate :log
-  def some_instance_method_decorated(foo, bar:)
+  def some_instance_method_decorated(foo, bam, bar:, baz:)
     "we are in some_instance_method_decorated"
   end
 
@@ -305,13 +305,15 @@ RSpec.describe Adornable do
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(foobar)
         expect(context.method_name).to eq(:some_instance_method_decorated)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_arguments).to eq(["foo", { bam: "hi" }, { bar: "bar", baz: 123 }])
+        expect(context.method_positional_args).to eq(["foo", { bam: "hi" }])
+        expect(context.method_kwargs).to eq({ bar: "bar", baz: 123 })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
       end
 
-      returned = foobar.some_instance_method_decorated("foo", bar: "bar")
+      returned = foobar.some_instance_method_decorated("foo", { bam: "hi" }, bar: "bar", baz: 123)
       expect(returned).to eq("we are in some_instance_method_decorated")
       expect(decorator_called).to be true
     end
@@ -328,6 +330,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(foobar)
         expect(context.method_name).to eq(:some_instance_method_multi_decorated)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
@@ -342,6 +346,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(foobar)
         expect(context.method_name).to eq(:some_instance_method_multi_decorated)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:memoize)
         expect(context.decorator_options).to be_empty
         block.call
@@ -372,6 +378,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(Foobar)
         expect(context.method_name).to eq(:some_class_method_decorated)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
@@ -392,6 +400,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(Foobar)
         expect(context.method_name).to eq(:some_class_method_multi_decorated)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
@@ -406,6 +416,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(Foobar)
         expect(context.method_name).to eq(:some_class_method_multi_decorated)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:memoize)
         expect(context.decorator_options).to be_empty
         block.call
@@ -431,6 +443,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(foobar)
         expect(context.method_name).to eq(:shadowed_instance_method_both_have_decorator)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
@@ -462,6 +476,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(foobar)
         expect(context.method_name).to eq(:shadowed_instance_method_decorator_added)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
@@ -484,6 +500,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(Foobar)
         expect(context.method_name).to eq(:shadowed_class_method_both_have_decorator)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call
@@ -511,6 +529,8 @@ RSpec.describe Adornable do
         expect(context.method_receiver).to eq(Foobar)
         expect(context.method_name).to eq(:shadowed_class_method_decorator_added)
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
+        expect(context.method_positional_args).to eq(["foo"])
+        expect(context.method_kwargs).to eq({ bar: "bar" })
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
         block.call

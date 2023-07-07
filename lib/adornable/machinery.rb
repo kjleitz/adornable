@@ -38,14 +38,14 @@ module Adornable
       clear_accumulated_decorators!
     end
 
-    def run_decorated_instance_method(bound_method, *args)
+    def run_decorated_instance_method(bound_method, *args, **kwargs)
       decorators = get_instance_method_decorators(bound_method.name)
-      run_decorators(decorators, bound_method, *args)
+      run_decorators(decorators, bound_method, *args, **kwargs)
     end
 
-    def run_decorated_class_method(bound_method, *args)
+    def run_decorated_class_method(bound_method, *args, **kwargs)
       decorators = get_class_method_decorators(bound_method.name)
-      run_decorators(decorators, bound_method, *args)
+      run_decorators(decorators, bound_method, *args, **kwargs)
     end
 
     private
@@ -88,8 +88,8 @@ module Adornable
       @class_method_decorators[name] = decorators || []
     end
 
-    def run_decorators(decorators, bound_method, *method_arguments)
-      return bound_method.call(*method_arguments) if Adornable::Utils.blank?(decorators)
+    def run_decorators(decorators, bound_method, *method_positional_args, **method_kwargs)
+      return bound_method.call(*method_positional_args, **method_kwargs) if Adornable::Utils.blank?(decorators)
 
       decorator, *remaining_decorators = decorators
       decorator_name = decorator[:name]
@@ -97,10 +97,24 @@ module Adornable
       decorator_options = decorator[:options]
       validate_decorator!(decorator_name, decorator_receiver, bound_method)
 
+      # This is for backwards-compatibility between Ruby 2.x and Ruby 3.x; in v3
+      # keyword arguments are treated differently than in v2 with respect to
+      # hash parameter equivalency. Previously, it was easy to just assume
+      # `method_arguments` could be an array with a hash at the end representing
+      # any given keyword arguments. However, in Ruby 3.x, we have to be able to
+      # distinguish between kwargs and trailing positional args of type `Hash`,
+      # so we'll shim `Adornable::Context#method_arguments` to look like it used
+      # to and then provide two new properties, `#method_positional_args` and
+      # `#method_kwargs`, to `Adornable::Context` for explicitness.
+      method_arguments = method_positional_args.dup
+      method_arguments << method_kwargs if Adornable::Utils.present?(method_kwargs)
+
       context = Adornable::Context.new(
         method_receiver: bound_method.receiver,
         method_name: bound_method.name,
         method_arguments: method_arguments,
+        method_positional_args: method_positional_args,
+        method_kwargs: method_kwargs,
         decorator_name: decorator_name,
         decorator_options: decorator_options,
       )
@@ -112,7 +126,7 @@ module Adornable
       end
 
       decorator_receiver.send(*send_parameters) do
-        run_decorators(remaining_decorators, bound_method, *method_arguments)
+        run_decorators(remaining_decorators, bound_method, *method_positional_args, **method_kwargs)
       end
     end
 

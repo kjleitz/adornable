@@ -36,9 +36,9 @@ module Adornable
 
     machinery.apply_accumulated_decorators_to_instance_method!(method_name)
     original_method = instance_method(method_name)
-    define_method(method_name) do |*args|
+    define_method(method_name) do |*args, **kwargs|
       bound_method = original_method.bind(self)
-      machinery.run_decorated_instance_method(bound_method, *args)
+      machinery.run_decorated_instance_method(bound_method, *args, **kwargs)
     end
     super
   end
@@ -49,8 +49,8 @@ module Adornable
 
     machinery.apply_accumulated_decorators_to_class_method!(method_name)
     original_method = method(method_name)
-    define_singleton_method(method_name) do |*args|
-      machinery.run_decorated_class_method(original_method, *args)
+    define_singleton_method(method_name) do |*args, **kwargs|
+      machinery.run_decorated_class_method(original_method, *args, **kwargs)
     end
     super
   end

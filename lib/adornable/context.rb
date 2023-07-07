@@ -8,14 +8,26 @@ module Adornable
       method_receiver
       method_name
       method_arguments
+      method_positional_args
+      method_kwargs
       decorator_name
       decorator_options
     ])
 
-    def initialize(method_receiver:, method_name:, method_arguments:, decorator_name:, decorator_options:)
+    def initialize(
+      method_receiver:,
+      method_name:,
+      method_arguments:,
+      method_positional_args:,
+      method_kwargs:,
+      decorator_name:,
+      decorator_options:
+    )
       @method_receiver = method_receiver
       @method_name = method_name
       @method_arguments = method_arguments
+      @method_positional_args = method_positional_args
+      @method_kwargs = method_kwargs
       @decorator_name = decorator_name
       @decorator_options = decorator_options
     end
