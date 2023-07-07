@@ -281,7 +281,7 @@ end
 
 RSpec.describe Adornable do
   it "has a version number" do
-    expect(Adornable::VERSION).not_to be nil
+    expect(Adornable::VERSION).not_to be_nil
   end
 
   context "when decorating instance methods" do
@@ -297,7 +297,10 @@ RSpec.describe Adornable do
     it "decorates decorated instance methods" do
       foobar = Foobar.new
 
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(foobar)
@@ -305,16 +308,21 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = foobar.some_instance_method_decorated("foo", bar: "bar")
       expect(returned).to eq("we are in some_instance_method_decorated")
+      expect(decorator_called).to be true
     end
 
     it "decorates multi-decorated instance methods" do
       foobar = Foobar.new
 
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      log_decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        log_decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(foobar)
@@ -322,9 +330,13 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
-      allow(Adornable::Decorators).to receive(:memoize) do |*args|
+      memo_decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:memoize) do |*args, &block|
+        memo_decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(foobar)
@@ -332,10 +344,13 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:memoize)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = foobar.some_instance_method_multi_decorated("foo", bar: "bar")
       expect(returned).to eq("we are in some_instance_method_multi_decorated")
+      expect(log_decorator_called).to be true
+      expect(memo_decorator_called).to be true
     end
   end
 
@@ -348,7 +363,10 @@ RSpec.describe Adornable do
     end
 
     it "decorates decorated class methods" do
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(Foobar)
@@ -356,14 +374,19 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = Foobar.some_class_method_decorated("foo", bar: "bar")
       expect(returned).to eq("we are in self.some_class_method_decorated")
+      expect(decorator_called).to be true
     end
 
     it "decorates multi-decorated class methods" do
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      log_decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        log_decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(Foobar)
@@ -371,9 +394,13 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
-      allow(Adornable::Decorators).to receive(:memoize) do |*args|
+      memo_decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:memoize) do |*args, &block|
+        memo_decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(Foobar)
@@ -381,10 +408,13 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:memoize)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = Foobar.some_class_method_multi_decorated("foo", bar: "bar")
       expect(returned).to eq("we are in self.some_class_method_multi_decorated")
+      expect(log_decorator_called).to be true
+      expect(memo_decorator_called).to be true
     end
   end
 
@@ -392,7 +422,10 @@ RSpec.describe Adornable do
     it "only decorates once if both have decorators" do
       foobar = Foobar.new
 
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(foobar)
@@ -400,10 +433,12 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = foobar.shadowed_instance_method_both_have_decorator("foo", bar: "bar")
       expect(returned).to eq("we are in shadowed_instance_method_both_have_decorator")
+      expect(decorator_called).to be true
     end
 
     it "does not decorate if the shadow does not have decorators" do
@@ -418,7 +453,10 @@ RSpec.describe Adornable do
     it "decorates if the shadow has a decorator even if the original does not" do
       foobar = Foobar.new
 
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(foobar)
@@ -426,16 +464,21 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = foobar.shadowed_instance_method_decorator_added("foo", bar: "bar")
       expect(returned).to eq("we are in shadowed_instance_method_decorator_added")
+      expect(decorator_called).to be true
     end
   end
 
   context "when decorating shadowed class methods" do
     it "only decorates once if both have decorators" do
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(Foobar)
@@ -443,10 +486,12 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = Foobar.shadowed_class_method_both_have_decorator("foo", bar: "bar")
       expect(returned).to eq("we are in self.shadowed_class_method_both_have_decorator")
+      expect(decorator_called).to be true
     end
 
     it "does not decorate if the shadow does not have decorators" do
@@ -457,7 +502,10 @@ RSpec.describe Adornable do
     end
 
     it "decorates if the shadow has a decorator even if the original does not" do
-      allow(Adornable::Decorators).to receive(:log) do |*args|
+      decorator_called = false
+
+      allow(Adornable::Decorators).to receive(:log) do |*args, &block|
+        decorator_called = true
         context = args.first
         expect(context).to be_a(Adornable::Context)
         expect(context.method_receiver).to eq(Foobar)
@@ -465,42 +513,23 @@ RSpec.describe Adornable do
         expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
         expect(context.decorator_name).to eq(:log)
         expect(context.decorator_options).to be_empty
-      end.and_call_original
+        block.call
+      end
 
       returned = Foobar.shadowed_class_method_decorator_added("foo", bar: "bar")
       expect(returned).to eq("we are in self.shadowed_class_method_decorator_added")
+      expect(decorator_called).to be true
     end
   end
 
   context "when using custom decorator methods explicitly" do
     it "decorates the instance method with a method found on the specified receiver" do
       foobar = Foobar.new
-
-      allow(FoobarExplicitDecorators).to receive(:blast_it) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(foobar)
-        expect(context.method_name).to eq(:custom_explicit_decorated_instance_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:blast_it)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = foobar.custom_explicit_decorated_instance_method("foo", bar: "bar")
       expect(returned).to eq("we are in custom_explicit_decorated_instance_method!")
     end
 
     it "decorates the class method with a method found on the specified receiver" do
-      allow(FoobarExplicitDecorators).to receive(:blast_it) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(Foobar)
-        expect(context.method_name).to eq(:custom_explicit_decorated_class_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:blast_it)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = Foobar.custom_explicit_decorated_class_method("foo", bar: "bar")
       expect(returned).to eq("we are in self.custom_explicit_decorated_class_method!")
     end
@@ -509,96 +538,33 @@ RSpec.describe Adornable do
   context "when using custom decorator methods implicitly" do
     it "decorates the instance method with a method found on the specified receiver" do
       foobar = Foobar.new
-
-      allow(FoobarImplicitDecorators).to receive(:wait_for_it) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(foobar)
-        expect(context.method_name).to eq(:custom_implicit_decorated_instance_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:wait_for_it)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = foobar.custom_implicit_decorated_instance_method("foo", bar: "bar")
       expect(returned).to eq("we are in custom_implicit_decorated_instance_method...")
     end
 
     it "decorates the class method with a method found on the specified receiver" do
-      allow(FoobarImplicitDecorators).to receive(:wait_for_it) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(Foobar)
-        expect(context.method_name).to eq(:custom_implicit_decorated_class_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:wait_for_it)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = Foobar.custom_implicit_decorated_class_method("foo", bar: "bar")
       expect(returned).to eq("we are in self.custom_implicit_decorated_class_method...")
     end
 
     it "chooses the last registered receiver in the case of duplicates for decorated instance methods" do
       foobar = Foobar.new
-
-      allow(FoobarImplicitDecorators).to receive(:wait_for_it_excitedly) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(foobar)
-        expect(context.method_name).to eq(:custom_implicit_overridden_decorated_instance_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:wait_for_it_excitedly)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = foobar.custom_implicit_overridden_decorated_instance_method("foo", bar: "bar")
       expect(returned).to eq("we are in custom_implicit_overridden_decorated_instance_method...WOO!")
     end
 
     it "decorates the class method with a method found on the specified receiver for decorated class methods" do
-      allow(FoobarImplicitDecorators).to receive(:wait_for_it_excitedly) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(Foobar)
-        expect(context.method_name).to eq(:custom_implicit_overridden_decorated_class_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:wait_for_it_excitedly)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = Foobar.custom_implicit_overridden_decorated_class_method("foo", bar: "bar")
       expect(returned).to eq("we are in self.custom_implicit_overridden_decorated_class_method...WOO!")
     end
 
     it "can decorate instance methods with local class methods" do
       foobar = Foobar.new
-
-      allow(Foobar).to receive(:whoa_its_a_local_decorator) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(foobar)
-        expect(context.method_name).to eq(:custom_implicit_local_decorated_instance_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:whoa_its_a_local_decorator)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = foobar.custom_implicit_local_decorated_instance_method("foo", bar: "bar")
       expect(returned).to eq("we are in custom_implicit_local_decorated_instance_method - now that's what I call a class method!")
     end
 
     it "can decorate class methods with local class methods" do
-      allow(Foobar).to receive(:whoa_its_a_local_decorator) do |*args|
-        context = args.first
-        expect(context).to be_a(Adornable::Context)
-        expect(context.method_receiver).to eq(Foobar)
-        expect(context.method_name).to eq(:custom_implicit_local_decorated_class_method)
-        expect(context.method_arguments).to eq(["foo", { bar: "bar" }])
-        expect(context.decorator_name).to eq(:whoa_its_a_local_decorator)
-        expect(context.decorator_options).to be_empty
-      end.and_call_original
-
       returned = Foobar.custom_implicit_local_decorated_class_method("foo", bar: "bar")
       expect(returned).to eq("we are in self.custom_implicit_local_decorated_class_method - now that's what I call a class method!")
     end
