@@ -8,6 +8,11 @@ require:
 AllCops:
   NewCops: enable
 
+# Gemspec
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
 # Layout
 
 Layout/LineLength:
@@ -63,7 +68,7 @@ Metrics/ModuleLength:
 # Rspec
 
 RSpec/ExampleLength:
-  Max: 25
+  Max: 30
 
 RSpec/MessageSpies:
   Enabled: false
