@@ -14,7 +14,7 @@ module Adornable
   end
 
   def decorate(decorator_name, from: nil, defer_validation: false, **decorator_options)
-    if Adornable::Utils.blank?(name)
+    if Adornable::Utils.blank?(decorator_name)
       raise Adornable::Error::InvalidDecoratorArguments, "Decorator name must be provided."
     end
 
