@@ -4,6 +4,8 @@ Adornable provides the ability to cleanly decorate methods in Ruby. You can make
 
 ## Installation
 
+**NOTE:** This library is tested with Ruby versions 2.5.x through 3.2.x.
+
 ### Locally (to your application)
 
 Add the gem to your application's `Gemfile`:
@@ -232,7 +234,9 @@ The **required argument** is an instance of `Adornable::Context`, which has some
 
 - `Adornable::Context#method_name`: the name of the decorated method being called (a symbol; e.g., `:some_method` or `:other_method`)
 - `Adornable::Context#method_receiver`: the actual object that the decorated method (the `#method_name`) belongs to/is being called on (an object/class; e.g., the class `Foo` if it's a decorated class method, or an instance of `Foo` if it's a decorated instance method)
-- `Adornable::Context#method_arguments`: an array of arguments passed to the decorated method, including keyword arguments as a final hash (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true)` then `arguments` would be `[123, {:bar=>true}]`)
+- `Adornable::Context#method_arguments`: an array of arguments passed to the decorated method, including keyword arguments as a final hash (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true, baz: 456)` then `method_arguments` would be `[123, {:bar=>true,:baz=>456}]`)
+- `Adornable::Context#method_positional_args`: an array of just the positional arguments passed to the decorated method, excluding keyword arguments (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, bar: true, baz: 456)` then `method_positional_args` would be `[123]`)
+- `Adornable::Context#method_kwargs`: a hash of just the keyword arguments passed to the decorated method (e.g., if `:yet_another_method` was called like `Foo.new.yet_another_method(123, { bam: "hi" }, bar: true, baz: 456)` then `method_kwargs` would be `{:bar=>true,:baz=>456}`)
 
 ##### Custom keyword arguments (optional)
 

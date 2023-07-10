@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# First argument should be desired ruby version. If a partial version is given
+# (e.g., 2.6) and multiple versions are found to be installed (e.g., 2.6.9 and
+# 2.6.10), then the highest version (in semver version order) will be selected.
+SELECTED_RUBY_VERSION=$(asdf list ruby | sort -V | sed -e 's/^[[:space:]]*//' | grep "^$1" | tail -n 1)
+
+if [ -z "$SELECTED_RUBY_VERSION" ]; then
+  echo "Ruby version $1 is not installed. Try running:"
+  echo "  asdf install ruby $1"
+  exit 1
+fi
+
+echo "Using Ruby version $SELECTED_RUBY_VERSION"
+
+echo "(setting global Ruby)"
+asdf global ruby $SELECTED_RUBY_VERSION
+
+echo "(reshimming for this version)"
+asdf reshim ruby $SELECTED_RUBY_VERSION
+
+echo "(reinstalling bundled gems)"
+bundle install --redownload
+

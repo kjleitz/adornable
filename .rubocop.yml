@@ -7,6 +7,7 @@ require:
 
 AllCops:
   NewCops: enable
+  TargetRubyVersion: 2.5
 
 # Gemspec
 
@@ -29,6 +30,7 @@ Layout/FirstArrayElementIndentation:
 # Metrics
 
 Metrics/AbcSize:
+  Max: 20
   CountRepeatedAttributes: false
   Exclude:
     - 'spec/**/*_spec.rb'
@@ -65,10 +67,13 @@ Metrics/ModuleLength:
   Exclude:
     - 'spec/**/*_spec.rb'
 
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
 # Rspec
 
 RSpec/ExampleLength:
-  Max: 30
+  Max: 40
 
 RSpec/MessageSpies:
   Enabled: false
