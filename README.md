@@ -4,6 +4,8 @@ Adornable provides the ability to cleanly decorate methods in Ruby. You can make
 
 ## Installation
 
+**NOTE:** This library is tested with Ruby versions 2.5.x through 3.2.x.
+
 ### Locally (to your application)
 
 Add the gem to your application's `Gemfile`:

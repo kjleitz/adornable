@@ -89,7 +89,9 @@ module Adornable
     end
 
     def run_decorators(decorators, bound_method, *method_positional_args, **method_kwargs)
-      return bound_method.call(*method_positional_args, **method_kwargs) if Adornable::Utils.blank?(decorators)
+      if Adornable::Utils.blank?(decorators)
+        return Adornable::Utils.empty_aware_send(bound_method, :call, method_positional_args, method_kwargs)
+      end
 
       decorator, *remaining_decorators = decorators
       decorator_name = decorator[:name]
@@ -119,13 +121,7 @@ module Adornable
         decorator_options: decorator_options,
       )
 
-      send_parameters = if Adornable::Utils.present?(decorator_options)
-        [decorator_name, context, decorator_options]
-      else
-        [decorator_name, context]
-      end
-
-      decorator_receiver.send(*send_parameters) do
+      Adornable::Utils.empty_aware_send(decorator_receiver, decorator_name, [context], decorator_options) do
         run_decorators(remaining_decorators, bound_method, *method_positional_args, **method_kwargs)
       end
     end

@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.description = "Adornable provides the ability to cleanly decorate methods in Ruby. You can make and use your own decorators, and you can also use some of the built-in ones that the gem provides. _Decorating_ methods is as simple as slapping a `decorate :some_decorator` above your method definition. _Defining_ decorators can be as simple as defining a method that yields to a block, or as complex as manipulating the decorated method's receiver and arguments, and/or changing the functionality of the decorator based on custom options supplied to it when initially applying the decorator." # rubocop:disable Layout/LineLength
   spec.homepage = "https://github.com/kjleitz/adornable"
   spec.license = "MIT"
-  spec.required_ruby_version = ">= 2.4.7"
+  spec.required_ruby_version = ">= 2.5.0"
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.

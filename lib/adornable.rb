@@ -36,10 +36,16 @@ module Adornable
 
     machinery.apply_accumulated_decorators_to_instance_method!(method_name)
     original_method = instance_method(method_name)
+
+    # NB: If you only supply `*args` to the block, you get kwargs as a trailing
+    # Hash member in the `args` array. If you supply both `*args, **kwargs` to
+    # the block, kwargs are excluded from the `args` array and only appear in
+    # the `kwargs` argument as a Hash.
     define_method(method_name) do |*args, **kwargs|
       bound_method = original_method.bind(self)
       machinery.run_decorated_instance_method(bound_method, *args, **kwargs)
     end
+
     super
   end
 
@@ -49,9 +55,15 @@ module Adornable
 
     machinery.apply_accumulated_decorators_to_class_method!(method_name)
     original_method = method(method_name)
+
+    # NB: If you only supply `*args` to the block, you get kwargs as a trailing
+    # Hash member in the `args` array. If you supply both `*args, **kwargs` to
+    # the block, kwargs are excluded from the `args` array and only appear in
+    # the `kwargs` argument as a Hash.
     define_singleton_method(method_name) do |*args, **kwargs|
       machinery.run_decorated_class_method(original_method, *args, **kwargs)
     end
+
     super
   end
 end
